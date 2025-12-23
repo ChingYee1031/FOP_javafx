@@ -3,9 +3,10 @@ package fop.assignment;
 import java.io.File;
 import java.io.IOException;
 import java.util.Scanner;
+
 import javafx.fxml.FXML;
-import javafx.scene.control.Label;
 import javafx.scene.control.Button;
+import javafx.scene.control.Label;
 
 public class CharacterSelection {
 
@@ -25,6 +26,27 @@ public class CharacterSelection {
     protected String name, color, handling;
     protected double speed, lives;
     protected int experiencePoints;
+
+    public String getName() {
+        return name;
+    }
+
+    public String getColor() {
+        return color;
+    }
+
+    public double getSpeed() {
+        return speed;
+    }
+
+    public double getLives() {
+        return lives;
+    }
+
+    // Optional: If you need these later
+    public String getHandling() {
+        return handling;
+    }
 
     @FXML
     public void initialize() {
@@ -81,9 +103,6 @@ public class CharacterSelection {
         }
     }
 
-    public String getColor() {
-        return this.color;
-    }
 
     @FXML
     private void handleSelectTron() throws IOException {
