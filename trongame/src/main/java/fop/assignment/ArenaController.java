@@ -28,44 +28,24 @@ public class ArenaController {
     private boolean gameStarted = false;
 
     public void initialize() {
-        // Initial UI State: Show character selection first
-        if (characterMenu != null) characterMenu.setVisible(true);
-        if (arenaMenu != null) arenaMenu.setVisible(false);
+        // 1. Retrieve the character chosen in the previous screen
+        if (App.globalSelectedCharacter != null) {
+            this.selectedChar = App.globalSelectedCharacter;
+        } else {
+            // Fallback if someone runs Arena directly without selecting
+            // Default selection is tron
+            System.out.println("Warning: No character selected in previous screen.");
+            this.selectedChar = new Tron(); 
+            this.selectedChar.loadAttributes("Tron");
+        }
+
+        // 2. Hide the Menu VBox because the choice is already made!
+        if (characterMenu != null) characterMenu.setVisible(false);
+        if (arenaMenu != null) arenaMenu.setVisible(true);
 
         model.loadArena1(); 
         draw();
         startTaskTimer();
-    }
-
-    // --- Character Selection Actions ---
-    @FXML
-    private void selectTronAction() {
-        // Correctly assign to the parent class type
-        this.selectedChar = new Tron(); 
-        
-        // Load attributes (Speed, Color, Handling) from characters.txt [cite: 9, 68]
-        this.selectedChar.loadAttributes("Tron"); 
-        
-        // Update the UI state
-        if (characterMenu != null) characterMenu.setVisible(false);
-        if (arenaMenu != null) arenaMenu.setVisible(true);
-        
-        System.out.println("Tron Selected and attributes loaded.");
-    }
-
-    @FXML
-    private void selectKevinAction() {
-        // Correctly assign to the parent class type
-        this.selectedChar = new Kevin();
-        
-        // Load attributes (Speed, Color, Handling) from characters.txt [cite: 9, 68]
-        this.selectedChar.loadAttributes("Kevin");
-        
-        // Update the UI state
-        if (characterMenu != null) characterMenu.setVisible(false);
-        if (arenaMenu != null) arenaMenu.setVisible(true);
-        
-        System.out.println("Kevin Selected and attributes loaded."); 
     }
 
     // --- Arena Button Actions ---

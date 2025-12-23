@@ -33,8 +33,9 @@ public class App extends Application {
 
     //username
     public static String currentPlayerName = "";
-    //character
-    public static String selectedCharacter = "";
+    
+    //hold current selected character object
+    public static CharacterSelection globalSelectedCharacter;
 
     public static void main(String[] args) {
         launch();

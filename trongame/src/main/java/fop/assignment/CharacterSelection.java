@@ -90,6 +90,11 @@ public class CharacterSelection {
         System.out.println("Tron Selected");
         // App class handles the global state and scene switching
         // App.selectedCharacter = "Tron"; 
+
+        Tron tron = new Tron();
+        tron.loadAttributes("Tron");
+        App.globalSelectedCharacter = tron;
+
         startGame();
     }
 
@@ -97,6 +102,11 @@ public class CharacterSelection {
     private void handleSelectKevin() throws IOException {
         System.out.println("Kevin Selected");
         // App.selectedCharacter = "Kevin"; 
+
+        Kevin kevin = new Kevin();
+        kevin.loadAttributes("Kevin");
+        App.globalSelectedCharacter = kevin;
+        
         startGame();
     }
 
