@@ -1,0 +1,80 @@
+# ================================
+# TRON STORY FILE — story.txt
+# For StoryEngine.java
+# ================================
+
+# ---------- CHAPTER 1 ----------
+chapter1: INITIATION (Lv 1–9)
+chapter1.scene1: You awaken in a corrupted sector. Bit hovers nearby, blinking rapidly.
+chapter1.scene2: Early XP flows easily as weak enemies derez upon impact.
+chapter1.scene3: Corrupted jetwalls and broken cycles paint a picture of recent devastation.
+chapter1.scene4: A distorted signal echoes from afar - Flynn... but unreadable.
+
+# ---------- CHAPTER 2 ----------
+chapter2: RISING THREAT (Lv 10–18)
+chapter2.scene1: System boost: +1 Life at Level 10.
+chapter2.scene2: Sark observes your battles from an unknown vantage point.
+chapter2.scene3: Corruption intensifies; arena physics destabilize.
+chapter2.scene4: Arena 2 is unlocked.
+
+# ---------- CHAPTER 3 ----------
+chapter3: RINZLER’S SHADOW (Lv 19–27)
+chapter3.scene1: A silent presence stalks you - fast, precise, deadly.
+chapter3.scene2: Rinzler appears briefly, his discs humming with red energy.
+chapter3.scene3: You defeat a mini-boss program and gain large XP.
+chapter3.scene4: A path divides - pursue Rinzler or avoid him.
+
+# ---------- CHAPTER 4 ----------
+chapter4: ISO REFUGE (Lv 28–36)
+chapter4.scene1: System boost: +1 Life at Level 30.
+chapter4.scene2: You discover ISO remnants surviving in hidden nodes.
+chapter4.scene3: They warn you of Clu's expanding purge.
+chapter4.scene4: Arena 3 unlocks. Your disc range is upgraded.
+
+# ---------- CHAPTER 5 ----------
+chapter5: GOLDEN EMPIRE (Lv 37–45)
+chapter5.scene1: Golden-armored troops march under Clu's command.
+chapter5.scene2: Archives reveal Clu resurrected using old backup data.
+chapter5.scene3: Elite soldiers patrol the Grid with unwavering precision.
+chapter5.scene4: Arena 4 unlocks. Prepare for heavy resistance.
+
+# ---------- CHAPTER 6 ----------
+chapter6: FRACTURE EXPANDS (Lv 46–54)
+chapter6.scene1: System boost: +1 Life at Level 50.
+chapter6.scene2: Arena sectors collapse one by one.
+chapter6.scene3: The ISO Archivist is captured and taken toward the Central Tower.
+chapter6.scene4: Your disc cooldown receives a major upgrade.
+
+# ---------- CHAPTER 7 ----------
+chapter7: CORE TRUTH (Lv 55–63)
+chapter7.scene1: Flynn finally appears - weakened, fragmented.
+chapter7.scene2: He confesses: the Fracture began from his failed rewrite attempt.
+chapter7.scene3: His code collided with Clu's core during synchronization.
+chapter7.scene4: Access to the Central Tower becomes possible.
+
+# ---------- CHAPTER 8 ----------
+chapter8: RINZLER REBORN (Lv 64–72)
+chapter8.scene1: Rinzler confronts you in a decisive battle.
+chapter8.scene2: His movements glitch - traces of Tron appear beneath the corruption.
+chapter8.scene3: Choice moment approaches: Purify, Defeat, or Spare him.
+chapter8.scene4: Outcome determines access to the highest sectors.
+
+# ---------- CHAPTER 9 ----------
+chapter9: MASTER KEY PROTOCOL (Lv 73–81)
+chapter9.scene1: System boost: +1 Disc Slot at Level 75.
+chapter9.scene2: Flynn transfers the Master Key into your disc.
+chapter9.scene3: The Grid destabilizes rapidly as Clu accelerates his takeover.
+chapter9.scene4: You approach the endgame.
+
+# ---------- CHAPTER 10 ----------
+chapter10: FINAL CONVERGENCE (Lv 82–90)
+chapter10.scene1: System boost: +1 Life at Level 90.
+chapter10.scene2: Clu stands ready in the Central Tower - perfectly calm.
+chapter10.scene3: Programs across the Grid await your decision.
+chapter10.scene4: The fate of the system is in your hands.
+
+# ---------- CHAPTER 11 — ENDINGS ----------
+ending.hero: With Flynn's help, you restore the Grid. Light spreads across every sector.
+ending.order: You join Clu. Together you impose absolute perfection and control.
+ending.sacrifice: You destroy the Grid entirely — preventing further corruption at any cost.
+ending.legacy: Tron returns, purified, becoming the Guardian of a newly reborn system.
