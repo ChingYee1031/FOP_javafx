@@ -34,27 +34,24 @@ public class CharacterSelection {
     @FXML
     private void handleSelectTron() throws IOException {
         System.out.println("Tron Selected");
-        
-        // Create the actual character object for the game
-        Tron selected = new Tron();
-        selected.loadAttributes("Tron");
-        
-        // Save to the global variable in App.java
-        App.chosenCharacter = selected; 
-        
+        // App class handles the global state and scene switching
+        // App.selectedCharacter = "Tron"; 
+
+        Tron tron = new Tron();
+        tron.loadAttributes("Tron");
+        App.globalSelectedCharacter = tron;
+
         startGame();
     }
 
     @FXML
     private void handleSelectKevin() throws IOException {
         System.out.println("Kevin Selected");
-        
-        // Create the actual character object for the game
-        Kevin selected = new Kevin();
-        selected.loadAttributes("Kevin");
-        
-        // Save to the global variable in App.java
-        App.chosenCharacter = selected;
+        // App.selectedCharacter = "Kevin"; 
+
+        Kevin kevin = new Kevin();
+        kevin.loadAttributes("Kevin");
+        App.globalSelectedCharacter = kevin;
         
         startGame();
     }
@@ -63,7 +60,7 @@ public class CharacterSelection {
      * Switch to the game arena.
      */
     private void startGame() throws IOException {
-        // This assumes you have a setRoot method in your App.java
-        App.setRoot("Arena"); 
+        // Switch to the game arena or cutscene
+        App.setRoot("Arena");
     }
 }

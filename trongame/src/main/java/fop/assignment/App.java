@@ -33,8 +33,48 @@ public class App extends Application {
 
     //username
     public static String currentPlayerName = "";
-    //character
-    public static String selectedCharacter = "";
+
+    //hold current selected character object
+    public static CharacterSelection globalSelectedCharacter;
+
+    //story progress
+    /*public class App extends Application {
+        public static Map<String, String> storyData = new HashMap<>();
+        public static String targetScene = "";
+        public static int targetLevel = 1;
+
+        @Override
+        public void start(Stage stage) throws IOException {
+            loadStoryKeys();
+
+            scene = new Scene(loadFXML("MainMenu"),640,480);
+            stage.setScene(scene);
+            stage.show();
+        }
+
+        private void loadStoryKeys() {
+           try{
+            File file = new File("story.txt");
+            if(file.exists()){
+                Scanner scanner = new Scanner(file);
+                while(scanner.hasNextLine()){
+                    String line = scanner.nextLine().trim();
+                    if(line.isEmpty() || line.startsWith("#")) continue;
+
+                    String[] parts = line.split(":",2);
+                    if(parts.length >= 1){
+                        storyData.put(parts[0].trim(), parts.length > 1 ? parts[1].trim() : "");
+                    }
+                }
+                scanner.close();
+            }
+        }catch (Exception e){
+               e.printStackTrace();
+               System.out.println("Error loading story keys.");
+           }
+        }
+    }
+        */
 
     public static void main(String[] args) {
         launch();
