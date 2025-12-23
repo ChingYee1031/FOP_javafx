@@ -1,2 +1,2 @@
-Tron,Blue,5,5
-Kevin,White,8,8
+Tron,Blue,High,Sharp,3.0
+Kevin,White,Low,Stable,5.0
