@@ -81,6 +81,10 @@ public class CharacterSelection {
         }
     }
 
+    public String getColor() {
+        return this.color;
+    }
+
     @FXML
     private void handleSelectTron() throws IOException {
         System.out.println("Tron Selected");
@@ -98,6 +102,6 @@ public class CharacterSelection {
 
     private void startGame() throws IOException {
         // Switch to the game arena or cutscene
-        // App.setRoot("CutscenePage");
+        App.setRoot("Arena");
     }
 }

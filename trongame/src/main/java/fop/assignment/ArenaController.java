@@ -7,7 +7,6 @@ import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
-import fop.assignment.CharacterSelection;
 
 
 public class ArenaController {
@@ -15,7 +14,7 @@ public class ArenaController {
     @FXML private VBox arenaMenu;     
     @FXML private Canvas gameCanvas;
 // Change this line in your ArenaController
-    private Character selectedChar;
+    private CharacterSelection selectedChar;
     private ArenaModel model = new ArenaModel();
     private int playerX = 20;
     private int playerY = 20;
@@ -182,9 +181,14 @@ public class ArenaController {
         if (model.getPlayerLives() <= 0) {
             gc.setFill(Color.RED);
         } else {
-            String hexColor = selectedChar.getColor();
-            // Use character color from file, fallback to Lime if file missing
-            gc.setFill((hexColor == null || hexColor.isEmpty()) ? Color.LIME : Color.web(hexColor));
+            // Check if a character is actually selected before asking for its color
+            if (selectedChar != null) {
+                String hexColor = selectedChar.getColor();
+                gc.setFill((hexColor == null || hexColor.isEmpty()) ? Color.LIME : Color.web(hexColor));
+            } else {
+                // If game just loaded and no character is picked yet, default to White
+                gc.setFill(Color.WHITE);
+            }
         }
         gc.fillRect(playerX * CELL, playerY * CELL, CELL - 1, CELL - 1);
         
