@@ -1,103 +1,69 @@
 package fop.assignment;
 
-import java.io.File;
 import java.io.IOException;
-import java.util.Scanner;
 import javafx.fxml.FXML;
-import javafx.scene.control.Label;
-import javafx.scene.control.Button;
 
+/**
+ * UI Controller for the Character Selection Screen.
+ * Its job is to display stats and tell the App which character was picked.
+ */
 public class CharacterSelection {
-
     // --- UI COMPONENTS ---
-    @FXML private Label tronSpeedLabel;
-    @FXML private Label tronHandlingLabel;
-    @FXML private Label tronNameLabel;
-
-    @FXML private Label kevinSpeedLabel;
-    @FXML private Label kevinHandlingLabel;
-    @FXML private Label kevinNameLabel;
-
-    @FXML private Button selectTronButton;
-    @FXML private Button selectKevinButton;
-
-    // --- ATTRIBUTES (From Character.java) ---
-    protected String name, color, handling;
-    protected double speed, lives;
-    protected int experiencePoints;
-
     @FXML
     public void initialize() {
-        // Automatically load stats from file when the screen opens
-        loadStatsFromFile();
-    }
-
-    private void loadStatsFromFile() {
-        // Load data for the character "Tron"
-        loadAttributes("Tron");
-        
-        // Update UI labels with the loaded data
-        tronSpeedLabel.setText("Speed: " + this.speed);
-        tronNameLabel.setText("Character: Tron");
+        // Automatically load stats from characters.txt when the screen opens
+        refreshUI();
     }
 
     /**
-     * Integrated logic to load data from characters.txt
+     * Creates temporary character objects to read from the file 
+     * and update the labels on the screen.
      */
-    public void loadAttributes(String targetName) {
-        // Default values
-        this.color = "#00FF00"; 
+    private void refreshUI() {
+        // 1. Load Tron data for display
+        Tron tempTron = new Tron();
+        tempTron.loadAttributes("Tron");
 
-        try {
-            File file = new File("characters.txt");
-            if (!file.exists()) {
-                System.err.println("CRITICAL: characters.txt missing from " + file.getAbsolutePath());
-                return;
-            }
-
-            Scanner reader = new Scanner(file);
-            while (reader.hasNextLine()) {
-                String line = reader.nextLine();
-                String[] data = line.split(",");
-
-                if (data.length > 1 && data[0].equalsIgnoreCase(targetName)) {
-                    // Logic to map color names to Hex codes
-                    if (data[1].equalsIgnoreCase("Blue")) {
-                        this.color = "#0000FF";
-                    } else if (data[1].equalsIgnoreCase("White")) {
-                        this.color = "#FFFFFF";
-                    }
-
-                    // Logic for Speed: "High" sets speed to 2.5, otherwise 1.5
-                    this.speed = data[2].contains("High") ? 2.5 : 1.5;
-                    // Parse lives from the 5th column
-                    this.lives = Double.parseDouble(data[4]);
-                    break;
-                }
-            }
-            reader.close();
-        } catch (Exception e) {
-            System.err.println("File error: " + e.getMessage());
-        }
+        // 2. Load Kevin data for display
+        Kevin tempKevin = new Kevin();
+        tempKevin.loadAttributes("Kevin");
     }
+
+    // --- BUTTON ACTIONS ---
 
     @FXML
     private void handleSelectTron() throws IOException {
         System.out.println("Tron Selected");
-        // App class handles the global state and scene switching
-        // App.selectedCharacter = "Tron"; 
+        
+        // Create the actual character object for the game
+        Tron selected = new Tron();
+        selected.loadAttributes("Tron");
+        
+        // Save to the global variable in App.java
+        App.chosenCharacter = selected; 
+        
         startGame();
     }
 
     @FXML
     private void handleSelectKevin() throws IOException {
         System.out.println("Kevin Selected");
-        // App.selectedCharacter = "Kevin"; 
+        
+        // Create the actual character object for the game
+        Kevin selected = new Kevin();
+        selected.loadAttributes("Kevin");
+        
+        // Save to the global variable in App.java
+        App.chosenCharacter = selected;
+        
         startGame();
     }
 
+    /**
+     * Switch to the game arena.
+     */
     private void startGame() throws IOException {
-        // Switch to the game arena or cutscene
-        // App.setRoot("CutscenePage");
+        // This assumes you have a setRoot method in your App.java
+        App.setRoot("Arena"); 
     }
 }

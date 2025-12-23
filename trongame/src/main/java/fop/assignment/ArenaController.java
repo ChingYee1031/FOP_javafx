@@ -7,112 +7,39 @@ import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
-import fop.assignment.CharacterSelection;
-
 
 public class ArenaController {
-    @FXML private VBox characterMenu; 
-    @FXML private VBox arenaMenu;     
+    @FXML private VBox characterMenu, arenaMenu;
     @FXML private Canvas gameCanvas;
-// Change this line in your ArenaController
+
     private Character selectedChar;
     private ArenaModel model = new ArenaModel();
-    private int playerX = 20;
-    private int playerY = 20;
+    private int playerX = 20, playerY = 20;
     private final int CELL = 15;
-
-    private enum Direction { UP, DOWN, LEFT, RIGHT, NONE }
-    private Direction currentDir = Direction.NONE;
-    
-    private long lastUpdate = 0;
-    private long speedNanos = 100_000_000; 
+    private String currentDir = "NONE";
     private boolean gameStarted = false;
+    private long lastUpdate = 0;
 
     public void initialize() {
-        // Initial UI State: Show character selection first
-        if (characterMenu != null) characterMenu.setVisible(true);
-        if (arenaMenu != null) arenaMenu.setVisible(false);
+        this.selectedChar = (App.chosenCharacter != null) ? App.chosenCharacter : new Tron();
+        if (selectedChar instanceof Tron && App.chosenCharacter == null) selectedChar.loadAttributes("Tron");
 
-        model.loadArena1(); 
+        if (characterMenu != null) characterMenu.setVisible(false);
+        if (arenaMenu != null) arenaMenu.setVisible(true);
+
+        model.loadArena1();
         draw();
         startTaskTimer();
     }
 
-    // --- Character Selection Actions ---
-    @FXML
-    private void selectTronAction() {
-        // Correctly assign to the parent class type
-        this.selectedChar = new Tron(); 
-        
-        // Load attributes (Speed, Color, Handling) from characters.txt [cite: 9, 68]
-        this.selectedChar.loadAttributes("Tron"); 
-        
-        // Update the UI state
-        if (characterMenu != null) characterMenu.setVisible(false);
-        if (arenaMenu != null) arenaMenu.setVisible(true);
-        
-        System.out.println("Tron Selected and attributes loaded.");
-    }
-
-    @FXML
-    private void selectKevinAction() {
-        // Correctly assign to the parent class type
-        this.selectedChar = new Kevin();
-        
-        // Load attributes (Speed, Color, Handling) from characters.txt [cite: 9, 68]
-        this.selectedChar.loadAttributes("Kevin");
-        
-        // Update the UI state
-        if (characterMenu != null) characterMenu.setVisible(false);
-        if (arenaMenu != null) arenaMenu.setVisible(true);
-        
-        System.out.println("Kevin Selected and attributes loaded."); 
-    }
-
-    // --- Arena Button Actions ---
-    @FXML
-    private void loadArena1Action() {
-        model.loadArena1();
-        startGameSession();
-    }
-
-    @FXML
-    private void loadArena2Action() {
-        model.loadArena2();
-        startGameSession();
-    }
-
-    @FXML
-    private void loadArena3Action() {
-        model.loadArena3();
-        startGameSession();
-    }
-
-    @FXML
-    private void loadRandomArenaAction() {
-        model.loadRandomArena();
-        startGameSession();
-    } 
-
-    private void startGameSession() {
-        resetPlayer();
-        gameStarted = true;
-        
-        // Hide all menu overlays to play
-        if (characterMenu != null) characterMenu.setVisible(false);
-        if (arenaMenu != null) arenaMenu.setVisible(false);
-        
-        gameCanvas.requestFocus(); 
-        draw();
-    }
-
     private void startTaskTimer() {
         new AnimationTimer() {
-            @Override
             public void handle(long now) {
                 if (gameStarted) {
-                    long currentDelay = model.isSpeedBoostActive() ? speedNanos / 2 : speedNanos;
-                    if (now - lastUpdate >= currentDelay) {
+                    long delay = (long) (100_000_000 / selectedChar.getSpeed());
+                    if (model.isSpeedBoostActive()) delay /= 2;
+
+                    if (now - lastUpdate >= delay) {
                         updateGame();
                         draw();
                         lastUpdate = now;
@@ -120,27 +47,17 @@ public class ArenaController {
                 }
             }
         }.start();
-    }   
+    }
 
     private void updateGame() {
-        if (currentDir == Direction.NONE || model.getPlayerLives() <= 0) return;
+        if (currentDir.equals("NONE") || model.getPlayerLives() <= 0) return;
 
-        int nextX = playerX;
-        int nextY = playerY;
+        int[] next = GameEngine.getNextPosition(playerX, playerY, currentDir);
+        model.processMove(next[0], next[1], playerX, playerY);
 
-        switch (currentDir) {
-            case UP:    nextY--; break;
-            case DOWN:  nextY++; break;
-            case LEFT:  nextX--; break;
-            case RIGHT: nextX++; break;
-            default:    break;
-        }
-
-        model.processMove(nextX, nextY, playerX, playerY);
-
-        if (nextX >= 0 && nextX < 40 && nextY >= 0 && nextY < 40) {
-            playerX = nextX;
-            playerY = nextY;
+        if (GameEngine.isWithinBounds(next[0], next[1])) {
+            playerX = next[0];
+            playerY = next[1];
         }
     }
 
@@ -148,18 +65,12 @@ public class ArenaController {
     public void handleKeyPress(KeyEvent event) {
         if (!gameStarted) return;
         switch (event.getCode()) {
-            case W: if (currentDir != Direction.DOWN) currentDir = Direction.UP; break;
-            case S: if (currentDir != Direction.UP)   currentDir = Direction.DOWN; break;
-            case A: if (currentDir != Direction.RIGHT) currentDir = Direction.LEFT; break;
-            case D: if (currentDir != Direction.LEFT)  currentDir = Direction.RIGHT; break;
+            case W: if (!currentDir.equals("DOWN")) currentDir = "UP"; break;
+            case S: if (!currentDir.equals("UP"))   currentDir = "DOWN"; break;
+            case A: if (!currentDir.equals("RIGHT")) currentDir = "LEFT"; break;
+            case D: if (!currentDir.equals("LEFT"))  currentDir = "RIGHT"; break;
             default: break;
         }
-    }
-
-    private void resetPlayer() {
-        playerX = 20;
-        playerY = 20;
-        currentDir = Direction.NONE;
     }
 
     private void draw() {
@@ -167,6 +78,7 @@ public class ArenaController {
         gc.setFill(Color.BLACK);
         gc.fillRect(0, 0, 600, 600);
 
+        // Draw Grid
         int[][] grid = model.getGrid();
         for (int x = 0; x < 40; x++) {
             for (int y = 0; y < 40; y++) {
@@ -178,28 +90,30 @@ public class ArenaController {
             }
         }
 
-        // Draw Player Head
-        if (model.getPlayerLives() <= 0) {
-            gc.setFill(Color.RED);
-        } else {
-            String hexColor = selectedChar.getColor();
-            // Use character color from file, fallback to Lime if file missing
-            gc.setFill((hexColor == null || hexColor.isEmpty()) ? Color.LIME : Color.web(hexColor));
-        }
+        // Draw Player and HUD
+        String pColor = (model.getPlayerLives() <= 0) ? "#FF0000" : selectedChar.getColor();
+        gc.setFill(Color.web(pColor == null ? "#00FF00" : pColor));
         gc.fillRect(playerX * CELL, playerY * CELL, CELL - 1, CELL - 1);
-        
-        // Handle Death / Reset Screen
-       if (model.getPlayerLives() <= 0) {
-        gameStarted = false;
-    
-        // Hide the character selection menu so it's not in the way
-        if (characterMenu != null) characterMenu.setVisible(false);
-    
-        // Show the arena selection menu immediately
-        if (arenaMenu != null) arenaMenu.setVisible(true); 
-    
-        gc.setFill(Color.WHITE);
-        gc.fillText("DEREZZED - SELECT AN ARENA TO TRY AGAIN", 180, 300);
+
+        HUDDisplay.draw(gc, (int)model.getPlayerLives(), selectedChar.getColor());
+
+        if (model.getPlayerLives() <= 0) {
+            gameStarted = false;
+            arenaMenu.setVisible(true);
+            HUDDisplay.drawGameOver(gc);
         }
     }
- }
+
+    @FXML private void loadArena1Action() { model.loadArena1(); startGameSession(); }
+    @FXML private void loadArena2Action() { model.loadArena2(); startGameSession(); }
+    @FXML private void loadArena3Action() { model.loadArena3(); startGameSession(); }
+    @FXML private void loadRandomArenaAction() { model.loadRandomArena(); startGameSession(); }
+
+    private void startGameSession() {
+        playerX = 20; playerY = 20; currentDir = "NONE";
+        gameStarted = true;
+        arenaMenu.setVisible(false);
+        gameCanvas.requestFocus();
+        draw();
+    }
+}
