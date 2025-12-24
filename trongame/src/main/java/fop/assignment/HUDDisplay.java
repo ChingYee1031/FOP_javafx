@@ -25,6 +25,6 @@ public class HUDDisplay {
         gc.setFill(Color.WHITE);
         gc.setFont(new javafx.scene.text.Font("Arial", 18));
         String message = "DEREZZED - SELECT AN ARENA TO TRY AGAIN";
-        gc.fillText(message, 110, 150);
+        gc.fillText(message, 100, 150);
     }
 }
