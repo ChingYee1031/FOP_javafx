@@ -143,11 +143,14 @@ public class ArenaController {
         currentDir = Direction.NONE;
     }
 
-    private void draw() {
+   private void draw() {
         GraphicsContext gc = gameCanvas.getGraphicsContext2D();
+        
+        // 1. Clear Screen
         gc.setFill(Color.BLACK);
         gc.fillRect(0, 0, 600, 600);
 
+        // 2. Draw Game Grid
         int[][] grid = model.getGrid();
         for (int x = 0; x < 40; x++) {
             for (int y = 0; y < 40; y++) {
@@ -159,45 +162,53 @@ public class ArenaController {
             }
         }
 
-        // Draw Player Head
+        // 3. Draw HUD (Hearts and Lives)
+        drawHUD(gc);
+
+        // 4. Draw Player Head
         if (model.getPlayerLives() <= 0) {
             gc.setFill(Color.RED);
         } else {
             String hexColor = selectedChar.getColor();
-            // Use character color from file, fallback to Lime if file missing
             gc.setFill((hexColor == null || hexColor.isEmpty()) ? Color.LIME : Color.web(hexColor));
         }
         gc.fillRect(playerX * CELL, playerY * CELL, CELL - 1, CELL - 1);
-        gc.setFill(Color.WHITE);
-        // Use a font size that is readable (e.g., 20)
-        gc.setFont(new javafx.scene.text.Font("Arial", 20)); 
-    
-        // Get the lives from the model
-        double currentLives = model.getPlayerLives();
-        drawHUD(gc);
-    }
-    
-        private void drawHUD(GraphicsContext gc) {
+
+        // --- NEW: Handle Death / Restart Selection Menu ---
+        if (model.getPlayerLives() <= 0) {
+            gameStarted = false; // Stop game movement
+            
+            // Bring back the Arena selection buttons
+            if (arenaMenu != null) {
+                arenaMenu.setVisible(true);
+            }
+
+            // Draw centered DEREZZED message
+            gc.setFill(Color.WHITE);
+            gc.setFont(new javafx.scene.text.Font("Arial", 20)); 
+            gc.fillText("DEREZZED - SELECT AN ARENA TO TRY AGAIN", 100, 150);
+        }
+    } // <--- This bracket correctly ends the draw() method
+
+    private void drawHUD(GraphicsContext gc) {
         int currentLives = (int) model.getPlayerLives();
+        
+        // Use character color for HUD text
         String charColor = selectedChar.getColor();
         Color hudColor = (charColor == null || charColor.isEmpty()) ? Color.LIME : Color.web(charColor);
+        gc.setFill(hudColor); 
 
-      // Set font style
-        gc.setFill(Color.WHITE);
-        gc.setFont(new javafx.scene.text.Font("OCR A Extended", 20)); // "Tron-like" font
+        gc.setFont(new javafx.scene.text.Font("OCR A Extended", 20));
         gc.fillText("USER LIVES:", 20, 35);
 
         // Draw Heart Icons next to the text
         gc.setFill(Color.RED);
         for (int i = 0; i < currentLives; i++) {
-        // This draws a simple "heart" shape using a circle and a square
-        double xOffset = 160 + (i * 25);
-        double yOffset = 20;
-        
-        // Simple pixel-art heart logic
-        gc.fillOval(xOffset, yOffset, 10, 10);         // Left bump
-        gc.fillOval(xOffset + 7, yOffset, 10, 10);     // Right bump
-        gc.fillRect(xOffset + 2, yOffset + 5, 13, 10); // Bottom fill
-    }
+            double xOffset = 160 + (i * 25);
+            double yOffset = 20;
+            gc.fillOval(xOffset, yOffset, 10, 10);         // Left bump
+            gc.fillOval(xOffset + 7, yOffset, 10, 10);     // Right bump
+            gc.fillRect(xOffset + 2, yOffset + 5, 13, 10); // Bottom fill
+        }
     }
 }
