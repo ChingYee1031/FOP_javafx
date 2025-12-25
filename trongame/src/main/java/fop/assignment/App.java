@@ -35,7 +35,7 @@ public class App extends Application {
     public static String currentPlayerName = "";
 
     //hold current selected character object
-    public static CharacterSelection globalSelectedCharacter;
+    public static Character globalSelectedCharacter;
 
     //story progress
     /*public class App extends Application {
