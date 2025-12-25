@@ -16,7 +16,7 @@
       </ImageView>
       <Button fx:id="startGameButton" mnemonicParsing="false" onAction="#handleStartGame" text="START GAME" StackPane.alignment="CENTER">
          <font>
-            <Font name="Arial" size="13.0" />
+            <Font name="OCR A Extended" size="13.0" />
          </font>
       </Button>
       <Button fx:id="leaderboardButton" mnemonicParsing="false" onAction="#handleLeaderboard" text="LEADERBOARD" StackPane.alignment="CENTER_LEFT">

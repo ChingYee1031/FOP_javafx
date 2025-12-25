@@ -19,7 +19,7 @@
       </ImageView>
       <Button mnemonicParsing="false" onAction="#handleStartButton" text="START GAME" StackPane.alignment="CENTER">
          <font>
-            <Font name="Arial" size="20.0" />
+            <Font name="OCR A Extended" size="20.0" />
          </font>
          <StackPane.margin>
             <Insets top="50.0" />

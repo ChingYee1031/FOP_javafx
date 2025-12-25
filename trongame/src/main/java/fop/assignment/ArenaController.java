@@ -3,81 +3,111 @@ package fop.assignment;
 import javafx.animation.AnimationTimer;
 import javafx.fxml.FXML;
 import javafx.scene.canvas.Canvas;
-import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.VBox;
-import javafx.scene.paint.Color;
 
 public class ArenaController {
+    // FXML UI Components
     @FXML private VBox characterMenu; 
     @FXML private VBox arenaMenu;     
+    @FXML private VBox gameOverMenu; 
     @FXML private Canvas gameCanvas;
 
+    // Game Objects and State
     private Character selectedChar;
-    private ArenaModel model = new ArenaModel();
+    private final ArenaModel model = new ArenaModel();
+    private final ArenaRenderer renderer = new ArenaRenderer(); // Specialized Drawing Class
+    
     private int playerX = 20;
     private int playerY = 20;
-    private final int CELL = 15;
-
+    
     private enum Direction { UP, DOWN, LEFT, RIGHT, NONE }
     private Direction currentDir = Direction.NONE;
     
     private long lastUpdate = 0;
-    private long speedNanos = 100_000_000; 
+    private final long speedNanos = 200_000_000; // Slower, more manageable speed
     private boolean gameStarted = false;
+    private int currentArenaChoice = 1; 
 
+    @FXML
     public void initialize() {
-        // 1. Grab the character selected in the menu from the global 'App' slot
+        // Load Character selection from global app state
         if (App.chosenCharacter != null) {
             this.selectedChar = App.chosenCharacter;
-            System.out.println("Arena started with: " + selectedChar.getName());
         } else {
-            // Safety fallback: load Tron if no selection was made
             this.selectedChar = new Tron();
             this.selectedChar.loadAttributes("Tron");
         }
 
-        // 2. Initial UI State: Hide character selection, show arena selection
+        // Initial UI Setup
         if (characterMenu != null) characterMenu.setVisible(false);
         if (arenaMenu != null) arenaMenu.setVisible(true);
+        
+        if (gameOverMenu != null) {
+            gameOverMenu.setVisible(false);
+            gameOverMenu.setManaged(false); // Prevents layout shifting in StackPane
+        }
 
         model.loadArena1(); 
         draw();
         startTaskTimer();
     }
 
-    // --- Arena Button Actions ---
+    // --- Arena Selection Actions ---
     @FXML
     private void loadArena1Action() {
+        currentArenaChoice = 1;
         model.loadArena1();
         startGameSession();
     }
 
     @FXML
     private void loadArena2Action() {
+        currentArenaChoice = 2;
         model.loadArena2();
         startGameSession();
     }
 
     @FXML
     private void loadArena3Action() {
+        currentArenaChoice = 3;
         model.loadArena3();
         startGameSession();
     }
 
     @FXML
     private void loadRandomArenaAction() {
+        currentArenaChoice = (int) (Math.random() * 3) + 1;
         model.loadRandomArena();
         startGameSession();
     } 
+
+    // --- Game State Control ---
+    @FXML
+    private void handleRestart() {
+        if (gameOverMenu != null) {
+            gameOverMenu.setVisible(false);
+            gameOverMenu.setManaged(false);
+        }
+        
+        // Reload the specific arena to reset lives and clear jetwalls
+        model.resetLivesAndGrid(currentArenaChoice);
+
+        resetPlayer();
+        gameStarted = true;
+        gameCanvas.requestFocus(); 
+        draw();
+    }   
 
     private void startGameSession() {
         resetPlayer();
         gameStarted = true;
         
-        // Hide all menu overlays to play
-        if (characterMenu != null) characterMenu.setVisible(false);
         if (arenaMenu != null) arenaMenu.setVisible(false);
+        if (gameOverMenu != null) {
+            gameOverMenu.setVisible(false);
+            gameOverMenu.setManaged(false);
+        }
         
         gameCanvas.requestFocus(); 
         draw();
@@ -88,8 +118,7 @@ public class ArenaController {
             @Override
             public void handle(long now) {
                 if (gameStarted) {
-                    // Use the speed attribute from the selected character
-                    // We adjust speedNanos based on the character's speed value
+                    // Calculate speed based on character attributes
                     long currentDelay = (long) (speedNanos / selectedChar.getSpeed());
                     if (model.isSpeedBoostActive()) currentDelay /= 2;
 
@@ -104,21 +133,34 @@ public class ArenaController {
     }   
 
     private void updateGame() {
-        if (currentDir == Direction.NONE || model.getPlayerLives() <= 0) return;
+        // Death Check
+        if (model.getPlayerLives() <= 0) {
+            gameStarted = false;
+            if (gameOverMenu != null) {
+                gameOverMenu.setVisible(true);
+                gameOverMenu.setManaged(true);
+                gameOverMenu.toFront(); // Ensure menu sits on top of StackPane
+            }
+            return;
+        }
+
+        if (currentDir == Direction.NONE) return;
 
         int nextX = playerX;
         int nextY = playerY;
 
         switch (currentDir) {
-            case UP:    nextY--; break;
-            case DOWN:  nextY++; break;
-            case LEFT:  nextX--; break;
-            case RIGHT: nextX++; break;
-            default:    break;
-        }
+        case UP:    nextY--; break;
+        case DOWN:  nextY++; break;
+        case LEFT:  nextX--; break;
+        case RIGHT: nextX++; break;
+        case NONE:  break; // Add this line to satisfy the compiler
+        default:    break; // Good practice to include this as well
+    }
 
         model.processMove(nextX, nextY, playerX, playerY);
 
+        // Update player coordinates if within bounds
         if (nextX >= 0 && nextX < 40 && nextY >= 0 && nextY < 40) {
             playerX = nextX;
             playerY = nextY;
@@ -127,14 +169,14 @@ public class ArenaController {
 
     @FXML
     public void handleKeyPress(KeyEvent event) {
-        if (!gameStarted) return;
-        switch (event.getCode()) {
-            case W: if (currentDir != Direction.DOWN) currentDir = Direction.UP; break;
-            case S: if (currentDir != Direction.UP)   currentDir = Direction.DOWN; break;
-            case A: if (currentDir != Direction.RIGHT) currentDir = Direction.LEFT; break;
-            case D: if (currentDir != Direction.LEFT)  currentDir = Direction.RIGHT; break;
-            default: break;
-        }
+    if (!gameStarted) return;
+    switch (event.getCode()) {
+        case W: if (currentDir != Direction.DOWN) currentDir = Direction.UP; break;
+        case S: if (currentDir != Direction.UP)   currentDir = Direction.DOWN; break;
+        case A: if (currentDir != Direction.RIGHT) currentDir = Direction.LEFT; break;
+        case D: if (currentDir != Direction.LEFT)  currentDir = Direction.RIGHT; break;
+        default: break; // This ignores every other key on the keyboard
+    }
     }
 
     private void resetPlayer() {
@@ -143,72 +185,8 @@ public class ArenaController {
         currentDir = Direction.NONE;
     }
 
-   private void draw() {
-        GraphicsContext gc = gameCanvas.getGraphicsContext2D();
-        
-        // 1. Clear Screen
-        gc.setFill(Color.BLACK);
-        gc.fillRect(0, 0, 600, 600);
-
-        // 2. Draw Game Grid
-        int[][] grid = model.getGrid();
-        for (int x = 0; x < 40; x++) {
-            for (int y = 0; y < 40; y++) {
-                if (grid[x][y] == 1) gc.setFill(Color.WHITE);
-                else if (grid[x][y] == 2) gc.setFill(Color.web("#00FFFF", 0.5));
-                else if (grid[x][y] == 3) gc.setFill(Color.YELLOW);
-                else continue;
-                gc.fillRect(x * CELL, y * CELL, CELL - 1, CELL - 1);
-            }
-        }
-
-        // 3. Draw HUD (Hearts and Lives)
-        drawHUD(gc);
-
-        // 4. Draw Player Head
-        if (model.getPlayerLives() <= 0) {
-            gc.setFill(Color.RED);
-        } else {
-            String hexColor = selectedChar.getColor();
-            gc.setFill((hexColor == null || hexColor.isEmpty()) ? Color.LIME : Color.web(hexColor));
-        }
-        gc.fillRect(playerX * CELL, playerY * CELL, CELL - 1, CELL - 1);
-
-        // --- NEW: Handle Death / Restart Selection Menu ---
-        if (model.getPlayerLives() <= 0) {
-            gameStarted = false; // Stop game movement
-            
-            // Bring back the Arena selection buttons
-            if (arenaMenu != null) {
-                arenaMenu.setVisible(true);
-            }
-
-            // Draw centered DEREZZED message
-            gc.setFill(Color.WHITE);
-            gc.setFont(new javafx.scene.text.Font("Arial", 20)); 
-            gc.fillText("DEREZZED - SELECT AN ARENA TO TRY AGAIN", 100, 150);
-        }
-    } // <--- This bracket correctly ends the draw() method
-
-    private void drawHUD(GraphicsContext gc) {
-        int currentLives = (int) model.getPlayerLives();
-        
-        // Use character color for HUD text
-        String charColor = selectedChar.getColor();
-        Color hudColor = (charColor == null || charColor.isEmpty()) ? Color.LIME : Color.web(charColor);
-        gc.setFill(hudColor); 
-
-        gc.setFont(new javafx.scene.text.Font("OCR A Extended", 20));
-        gc.fillText("USER LIVES:", 20, 35);
-
-        // Draw Heart Icons next to the text
-        gc.setFill(Color.RED);
-        for (int i = 0; i < currentLives; i++) {
-            double xOffset = 160 + (i * 25);
-            double yOffset = 20;
-            gc.fillOval(xOffset, yOffset, 10, 10);         // Left bump
-            gc.fillOval(xOffset + 7, yOffset, 10, 10);     // Right bump
-            gc.fillRect(xOffset + 2, yOffset + 5, 13, 10); // Bottom fill
-        }
+    private void draw() {
+        // Delegate all drawing tasks to the Renderer class
+        renderer.render(gameCanvas.getGraphicsContext2D(), model, selectedChar, playerX, playerY);
     }
 }

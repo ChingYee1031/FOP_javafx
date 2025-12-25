@@ -18,7 +18,7 @@
       </ImageView>
       <Label text="ENTER USERNAME" textFill="WHITE" StackPane.alignment="CENTER">
          <font>
-            <Font name="Arial" size="20.0" />
+            <Font name="OCR A Extended" size="20.0" />
          </font>
          <StackPane.margin>
             <Insets />

@@ -28,7 +28,7 @@
                   </ImageView>
                   <Label fx:id="tronNameLabel" alignment="CENTER" text="TRON" textAlignment="CENTER" textFill="WHITE">
                      <font>
-                        <Font name="Arial" size="18.0" />
+                        <Font name="OCR A Extended" size="18.0" />
                      </font>
                   </Label>
                   <Button fx:id="selectTronButton" mnemonicParsing="false" onAction="#handleSelectTron" prefWidth="120.0" text="SELECT TRON" />
@@ -44,7 +44,7 @@
                   </ImageView>
                   <Label fx:id="kevinNameLabel" alignment="CENTER" text="KEVIN" textAlignment="CENTER" textFill="WHITE">
                      <font>
-                        <Font name="Arial" size="18.0" />
+                        <Font name="OCR A Extended" size="18.0" />
                      </font>
                   </Label>
                    <Button fx:id="selectKevinButton" mnemonicParsing="false" onAction="#handleSelectKevin" prefWidth="120.0" text="SELECT KEVIN" />

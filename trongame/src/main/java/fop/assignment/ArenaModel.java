@@ -122,4 +122,12 @@ public class ArenaModel {
         return playerLives;}
     public boolean isOpenType() {
         return isOpenType; }
+    
+    public void resetLivesAndGrid(int arenaNumber) {
+    this.playerLives = 3; // Or your starting lives constant
+    // Re-load the specific arena to clear old jetwalls (grid = 0)
+    if (arenaNumber == 1) loadArena1();
+    else if (arenaNumber == 2) loadArena2();
+    else if (arenaNumber == 3) loadArena3();
+}
 }
