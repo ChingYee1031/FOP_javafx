@@ -1,6 +1,7 @@
 package fop.assignment;
 
 import java.io.IOException;
+
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;
 import javafx.scene.control.TextField;
@@ -13,22 +14,27 @@ public class LoginPage {
     @FXML
     private Button loginButton;
 
-    // This ONE method handles everything when the button is clicked
     @FXML
     private void handleLogin() throws IOException {
         String input = nameInput.getText();
 
-        // 1. Validation: Make sure they actually typed something
+        // 1. Validation
         if (input == null || input.trim().isEmpty()) {
             System.out.println("Error: Name cannot be empty!");
-            return; // Stop here, don't change scenes
+            return; 
         }
 
-        // 2. Save the name globally
-        App.currentPlayerName = input; 
-        System.out.println("Welcome, " + App.currentPlayerName);
+        // 2. FIX: Create the Player Object immediately
+        // We initialize them with default "Tron" stats (Blue, 3 lives, 1.5 speed)
+        // (If they pick a different character later, we can update these stats then)
+        Player newPlayer = new Player(input, "#00FFFF", 3.0, 1.5);
 
-        // 3. Move to the next page
+        // 3. FIX: Save to the new 'globalPlayer' variable instead of 'currentPlayerName'
+        App.globalPlayer = newPlayer; 
+        System.out.println("Welcome, " + newPlayer.getName());
+
+        // 4. Move to next page
+        // Note: If you want to start the Story immediately, change "MenuPage" to "CutscenePage"
         App.setRoot("MenuPage"); 
     }
 }

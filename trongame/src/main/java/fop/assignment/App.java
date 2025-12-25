@@ -1,29 +1,40 @@
 package fop.assignment;
 
+import java.io.IOException;
+
 import javafx.application.Application;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
 
-import java.io.IOException;
-
-/**
- * JavaFX App
- */
 public class App extends Application {
 
     private static Scene scene;
+    
+    // --- GLOBAL STATE (Saves progress between screens) ---
+    public static Player globalPlayer; 
+    public static CharacterSelection globalSelectedCharacter;
+    
+    // Tracks which chapter to show next (Default: chapter1)
+    public static String currentChapterId = "chapter1"; 
 
     @Override
     public void start(Stage stage) throws IOException {
-        scene = new Scene(loadFXML("StartPage"), 640, 480);
+        // Start at the Character Selection or Start Page
+        scene = new Scene(loadFXML("StartPage"), 800, 600); // 800x600 for better view
         stage.setScene(scene);
         stage.show();
     }
 
-    static void setRoot(String fxml) throws IOException {
+    public static void setRoot(String fxml) throws IOException {
         scene.setRoot(loadFXML(fxml));
+    }
+
+    // NEW: Helper to switch to a specific cutscene
+    public static void goToCutscene(String chapterId) throws IOException {
+        currentChapterId = chapterId;
+        setRoot("CutscenePage");
     }
 
     private static Parent loadFXML(String fxml) throws IOException {
@@ -31,14 +42,7 @@ public class App extends Application {
         return fxmlLoader.load();
     }
 
-    //username
-    public static String currentPlayerName = "";
-    
-    //hold current selected character object
-    public static CharacterSelection globalSelectedCharacter;
-
     public static void main(String[] args) {
         launch();
     }
-
 }

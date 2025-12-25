@@ -1,19 +1,50 @@
 package fop.assignment;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.Random;
 
+import javafx.scene.image.Image;
+
 public class Enemy extends GameCharacter {
-    // New fields required by the assignment
+
     private String difficulty; 
     private int xpReward;
     private String intelligence; 
+    
+    // NEW: Variable to store the image
+    private Image enemyIcon;
 
     public Enemy(String name, String color, double lives, double speed, String difficulty, int xpReward, String intelligence) {
         super(name, color, lives, speed);
         this.difficulty = difficulty;
         this.xpReward = xpReward;
         this.intelligence = intelligence;
+        
+        // NEW: Load the image as soon as the enemy is created
+        loadEnemyImage();
+    }
+
+    private void loadEnemyImage() {
+        try {
+            // This looks for "images/Clu.png", "images/Sark.png" etc.
+            // based on the name from the text file.
+            String path = "images/" + this.name + ".png";
+            File file = new File(path);
+            
+            if (file.exists()) {
+                this.enemyIcon = new Image(file.toURI().toString());
+            } else {
+                System.out.println("Warning: Could not find image at " + path);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    // NEW: Allow the controller to get the image
+    public Image getIcon() {
+        return this.enemyIcon;
     }
 
     public int getXPReward() {
@@ -31,15 +62,14 @@ public class Enemy extends GameCharacter {
         if (isSafe(x - 1, y, grid)) validMoves.add(2); 
         if (isSafe(x + 1, y, grid)) validMoves.add(3);
 
-        if (validMoves.isEmpty()) return -1; // No moves, crash imminent
+        if (validMoves.isEmpty()) return -1; 
 
         Random rand = new Random();
         int chosenMove = -1;
 
         // --- AI PERSONALITY LOGIC ---
         if (intelligence.equals("Predictable")) {
-            // Sark: 80% chance to keep moving forward (Current Direction) [cite: 144]
-            // We check 'currentDir != -1' to ensure we have moved at least once before
+            // Sark: Stick to current direction (80% chance)
             if (currentDir != -1 && validMoves.contains(currentDir)) {
                 if (rand.nextDouble() > 0.2) {
                     chosenMove = currentDir;
@@ -47,18 +77,15 @@ public class Enemy extends GameCharacter {
             }
         }
         else if (intelligence.equals("Erratic")) {
-            // Koura: Purely random [cite: 148]
+            // Koura: Purely random
             chosenMove = validMoves.get(rand.nextInt(validMoves.size()));
         }
 
-        // Default Fallback (if no specific move was chosen above)
         if (chosenMove == -1) {
             chosenMove = validMoves.get(rand.nextInt(validMoves.size()));
         }
 
-        // CRITICAL FIX: Save the direction so we remember it for next time!
         this.currentDir = chosenMove; 
-        
         return chosenMove;
     }
 

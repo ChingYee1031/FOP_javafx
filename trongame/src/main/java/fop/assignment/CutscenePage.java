@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Scanner;
+
 import javafx.fxml.FXML;
 import javafx.scene.control.Label;
 import javafx.scene.image.Image;
@@ -26,15 +27,18 @@ public class CutscenePage {
     private String currentChapter = "chapter1"; // Default to Chapter 1
     private int currentSceneNumber = 1;         // Start at Scene 1
 
-    @FXML
+@FXML
     public void initialize() {
-        // 1. Load all text from the file into memory
+        // 1. Load the story text
         loadStoryFromFile();
 
-        // 2. Check if a specific chapter was requested globally (Optional)
-        // if (App.targetChapter != null) currentChapter = App.targetChapter;
+        // 2. NEW: Get the correct chapter from App
+        this.currentChapter = App.currentChapterId; 
+        this.currentSceneNumber = 1; // Always start at scene 1 of that chapter
 
-        // 3. Display the first scene (e.g., "chapter1.scene1")
+        System.out.println("Loading Chapter: " + currentChapter);
+
+        // 3. Display the first scene
         loadCurrentScene();
     }
 

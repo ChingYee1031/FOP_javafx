@@ -1,0 +1,4 @@
+Clu,Gold,Impossible,1000,3.0,Aggressive
+Rinzler,Red,Hard,500,2.5,Sharp
+Sark,Yellow,Medium,100,2.0,Predictable
+Koura,Green,Easy,10,1.5,Erratic

@@ -56,4 +56,13 @@ public abstract class GameCharacter {
             this.isAlive = false;
         }
     }
+
+    public void setColor(String newColor) {
+        this.color = newColor;
+    }
+    
+    // Also add this if it is missing, just in case:
+    public void setSpeed(double newSpeed) {
+        this.speed = newSpeed;
+    }
 }
