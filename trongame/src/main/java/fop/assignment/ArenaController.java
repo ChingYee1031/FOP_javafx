@@ -30,6 +30,7 @@ public class ArenaController {
     // --- GAME DATA ---
     private ArenaModel model = new ArenaModel();
     private Player player;
+    private AnimationTimer gameTimer;
     private ArrayList<Enemy> activeEnemies = new ArrayList<>();
     private ArrayList<Enemy> enemyPool = new ArrayList<>();
     private ArrayList<Disc> discs = new ArrayList<>();
@@ -138,22 +139,26 @@ public class ArenaController {
     }
 
     // --- GAME LOOP ---
-    private void startTaskTimer() {
-        new AnimationTimer() {
-            @Override
-            public void handle(long now) {
-                if (!gameOverTriggered) {
-                    long currentDelay = model.isSpeedBoostActive() ? speedNanos / 2 : speedNanos;
-                    if (now - lastUpdate >= currentDelay) {
-                        updateGame();
-                        draw();
-                        lastUpdate = now;
-                    }
+private void startTaskTimer() {
+    // 1. Assign the new timer to the 'gameTimer' variable
+    gameTimer = new AnimationTimer() {
+        @Override
+        public void handle(long now) {
+            if (!gameOverTriggered) {
+                long currentDelay = model.isSpeedBoostActive() ? speedNanos / 2 : speedNanos;
+                if (now - lastUpdate >= currentDelay) {
+                    updateGame();
+                    draw();
+                    lastUpdate = now;
                 }
-                drawFloatingText(gameCanvas.getGraphicsContext2D());
             }
-        }.start();
-    }   
+            drawFloatingText(gameCanvas.getGraphicsContext2D());
+        }
+    };
+    
+    // 2. Start it using the variable
+    gameTimer.start(); 
+}   
 
     private void updateGame() {
         // --- HORDE SPAWNER ---
@@ -288,25 +293,33 @@ public class ArenaController {
         enemyTrails.remove(index);
     }
 
-    private void checkStoryProgression(int level) {
-        try {
-            String nextChapter = null;
-            if (level == 10) nextChapter = "chapter2";
-            else if (level == 19) nextChapter = "chapter3";
-            else if (level == 28) nextChapter = "chapter4";
-            else if (level == 37) nextChapter = "chapter5";
-            else if (level == 46) nextChapter = "chapter6";
-            else if (level == 55) nextChapter = "chapter7";
-            else if (level == 64) nextChapter = "chapter8";
-            else if (level == 73) nextChapter = "chapter9";
-            else if (level == 82) nextChapter = "chapter10";
 
-            if (nextChapter != null) {
-                gameStarted = false; 
-                App.goToCutscene(nextChapter);
-            }
-        } catch (Exception ex) { ex.printStackTrace(); }
-    }
+
+private void checkStoryProgression(int level) {
+    try {
+        String nextChapter = null;
+
+        // Based on your story.txt ranges:
+        if (level == 10)      nextChapter = "chapter2"; // RISING THREAT
+        else if (level == 19) nextChapter = "chapter3"; // RINZLER’S SHADOW
+        else if (level == 28) nextChapter = "chapter4"; // ISO REFUGE
+        else if (level == 37) nextChapter = "chapter5"; // GOLDEN EMPIRE
+        else if (level == 46) nextChapter = "chapter6"; // FRACTURE EXPANDS
+        else if (level == 55) nextChapter = "chapter7"; // CORE TRUTH
+        else if (level == 64) nextChapter = "chapter8"; // RINZLER REBORN
+        else if (level == 73) nextChapter = "chapter9"; // MASTER KEY PROTOCOL
+        else if (level == 82) nextChapter = "chapter10"; // FINAL CONVERGENCE
+
+        if (nextChapter != null) {
+            gameStarted = false;
+            
+            // Stop the game loop timer so it doesn't run in background
+            if (gameTimer != null) gameTimer.stop(); 
+            
+            App.goToCutscene(nextChapter);
+        }
+    } catch (Exception ex) { ex.printStackTrace(); }
+}
 
     // --- SPAWN LOGIC (HORDE MODE) ---
     private int getMaxEnemiesForLevel() {
@@ -368,24 +381,46 @@ public class ArenaController {
         }
     }
 
-    // --- CONTROLS ---
-    @FXML
+@FXML
     public void handleKeyPress(KeyEvent event) {
         if (!gameStarted || gameOverTriggered) return; 
         if (activeEnemies.isEmpty()) return;
 
+        // 1. Shooting (Spacebar)
         if (event.getCode() == KeyCode.SPACE) {
-            // SOUND: Play Shoot Sound
             SoundManager.playSound("shoot.wav");
             discs.add(new Disc(player.getX(), player.getY(), lastFacingDir));
             return;
         }
+
+        // 2. Movement & Cheats
         switch (event.getCode()) {
-            case W: if (currentDir != Direction.DOWN) currentDir = Direction.UP; break;
-            case S: if (currentDir != Direction.UP)   currentDir = Direction.DOWN; break;
-            case A: if (currentDir != Direction.RIGHT) currentDir = Direction.LEFT; break;
-            case D: if (currentDir != Direction.LEFT)  currentDir = Direction.RIGHT; break;
-            default: break;
+            // Movement Keys
+            case W: 
+                if (currentDir != Direction.DOWN) currentDir = Direction.UP; 
+                break;
+            case S: 
+                if (currentDir != Direction.UP)   currentDir = Direction.DOWN; 
+                break;
+            case A: 
+                if (currentDir != Direction.RIGHT) currentDir = Direction.LEFT; 
+                break;
+            case D: 
+                if (currentDir != Direction.LEFT)  currentDir = Direction.RIGHT; 
+                break;
+
+            // --- CHEAT CODE (Must be inside the switch) ---
+            case L: 
+                // CHEAT: Gives 100 XP to force a Level Up immediately
+                player.addXP(100); 
+                System.out.println("CHEAT: Level is now " + player.getLevel());
+                
+                // Manually trigger the check to see if a cutscene should happen
+                checkStoryProgression(player.getLevel()); 
+                break;
+
+            default: 
+                break;
         }
     }
 
