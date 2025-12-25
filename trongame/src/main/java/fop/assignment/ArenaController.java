@@ -1,7 +1,6 @@
 package fop.assignment;
 
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -40,22 +39,17 @@ public class ArenaController {
     private ArrayList<Queue<int[]>> enemyTrails = new ArrayList<>();
     private final int MAX_TRAIL_LENGTH = 50; 
 
-    // --- FLOATING TEXT SYSTEM ---
+    // --- VISUALS ---
     private class FloatingText {
-        String text;
-        double x, y;
-        double life = 1.0; 
-        Color color;
-
+        String text; double x, y, life = 1.0; Color color;
         FloatingText(String text, double x, double y, Color color) {
             this.text = text; this.x = x; this.y = y; this.color = color;
         }
     }
     private ArrayList<FloatingText> floatingTexts = new ArrayList<>();
 
-    // --- GRAPHICS SETTINGS ---
+    // --- SETTINGS ---
     private final int CELL = 20; 
-
     private enum Direction { UP, DOWN, LEFT, RIGHT, NONE }
     private Direction currentDir = Direction.NONE;
     private int lastFacingDir = 0; 
@@ -76,28 +70,28 @@ public class ArenaController {
         gameCanvas.setWidth(40 * CELL);
         gameCanvas.setHeight(40 * CELL);
 
-        // 1. Load Data FIRST
+        // 1. Load Data
         loadEnemiesToPool(); 
         
         // 2. Setup Player
         setupPlayer();
 
-        // 3. Spawn Enemy
+        // 3. Initial Spawn
         spawnNextEnemy();    
 
+        // 4. UI Setup
         if (characterMenu != null) characterMenu.setVisible(false);
         if (arenaMenu != null) arenaMenu.setVisible(true);
 
+        // 5. Start Game Loop
         model.loadArena1(); 
-        
-        // 4. Force a Draw immediately
         draw();
-        
-        // 5. Start the loop
         startTaskTimer();
-        
-        // 6. Allow movement immediately
         gameStarted = true; 
+        
+        // --- SOUND: Start Background Music ---
+        // Make sure "bgm.mp3" is in src/main/resources/fop/assignment/sounds/
+        SoundManager.playMusic("bgm.mp3");
     }
 
     private void setupPlayer() {
@@ -105,24 +99,25 @@ public class ArenaController {
             this.player = App.globalPlayer;
             this.player.setPosition(20, 20);
             
-            // Resurrection Logic
+            // Resurrection Logic: Reset lives if coming from Game Over
             if (!this.player.isAlive()) {
                 this.player.lives = 3.0; 
                 this.player.isAlive = true; 
-                System.out.println("Player Resurrected!");
             }
         } else {
-            // New Game / Debug Fallback
+            // Debug Fallback
             this.player = new Player("Tron", "#00FFFF", 3.0, 1.5);
             this.player.setPosition(20, 20);
             App.globalPlayer = this.player; 
         }
         
+        // Reset Logic Flags
         playerTrail.clear(); 
         gameOverTriggered = false;
         currentDir = Direction.NONE;
     }
 
+    // --- MENU ACTIONS ---
     @FXML private void loadArena1Action() { model.loadArena1(); startGameSession(); }
     @FXML private void loadArena2Action() { model.loadArena2(); startGameSession(); }
     @FXML private void loadArena3Action() { model.loadArena3(); startGameSession(); }
@@ -142,6 +137,7 @@ public class ArenaController {
         draw();
     }
 
+    // --- GAME LOOP ---
     private void startTaskTimer() {
         new AnimationTimer() {
             @Override
@@ -160,12 +156,14 @@ public class ArenaController {
     }   
 
     private void updateGame() {
-        if (activeEnemies.isEmpty()) {
+        // --- HORDE SPAWNER ---
+        // Keeps spawning enemies until the max limit for the level is reached
+        if (activeEnemies.isEmpty() || activeEnemies.size() < getMaxEnemiesForLevel()) {
             spawnNextEnemy();
-            if (activeEnemies.isEmpty()) return; 
+            if (activeEnemies.isEmpty()) return; // Safety check
         }
 
-        // Check Death
+        // --- DEATH CHECK ---
         if (player == null || !player.isAlive()) {
             if (!gameOverTriggered) {
                 triggerGameOverSequence();
@@ -195,7 +193,7 @@ public class ArenaController {
             }
         }
 
-        // 2. Discs
+        // 2. Discs Logic
         for (int i = 0; i < discs.size(); i++) {
             Disc d = discs.get(i);
             d.update(); 
@@ -205,7 +203,7 @@ public class ArenaController {
             }
         }
 
-        // 3. Enemies
+        // 3. Enemy Logic
         while (enemyTrails.size() < activeEnemies.size()) enemyTrails.add(new LinkedList<>());
 
         for (int i = 0; i < activeEnemies.size(); i++) {
@@ -218,7 +216,7 @@ public class ArenaController {
                 continue;
             }
 
-            // AI Move
+            // AI Movement
             int moveDir = e.makeMove(model.getGrid());
             int ex = e.getX();
             int ey = e.getY();
@@ -235,9 +233,12 @@ public class ArenaController {
                 model.getGrid()[old[0]][old[1]] = 0;
             }
 
-            // Check Hits
+            // --- HIT DETECTION ---
             for (Disc d : discs) {
                 if (d.isActive() && d.getX() == e.getX() && d.getY() == e.getY()) {
+                    // SOUND: Play Hit Sound
+                    SoundManager.playSound("hit.wav");
+                    
                     e.reduceLives(1.0); 
                     d.deactivate();     
                     spawnFloatingText("HIT!", e.getX(), e.getY(), Color.RED);
@@ -247,12 +248,17 @@ public class ArenaController {
         }
     }
 
+    // --- GAME OVER ---
     private void triggerGameOverSequence() {
         gameOverTriggered = true;
         gameStarted = false; 
         System.out.println("Player Died. Triggering Game Over Sequence.");
 
-        PauseTransition pause = new PauseTransition(Duration.seconds(1));
+        // SOUND: Stop Music and Play Game Over Sound
+        SoundManager.stopMusic();
+        SoundManager.playSound("gameover.wav");
+
+        PauseTransition pause = new PauseTransition(Duration.seconds(2));
         pause.setOnFinished(event -> {
             try {
                 App.setRoot("GameOverPage");
@@ -263,6 +269,7 @@ public class ArenaController {
         pause.play();
     }
 
+    // --- ENEMY DEATH & REWARDS ---
     private void handleEnemyDeath(Enemy e, int index) {
         int oldLevel = player.getLevel();
         player.addXP(e.getXPReward());
@@ -272,12 +279,13 @@ public class ArenaController {
         showMessage("DEFEATED " + e.getName());
 
         if (newLevel > oldLevel) {
+            // Optional: Play Level Up Sound
+            SoundManager.playSound("levelup.wav");
             checkStoryProgression(newLevel);
         }
 
         activeEnemies.remove(index);
         enemyTrails.remove(index);
-        spawnNextEnemy(); 
     }
 
     private void checkStoryProgression(int level) {
@@ -300,30 +308,26 @@ public class ArenaController {
         } catch (Exception ex) { ex.printStackTrace(); }
     }
 
-    // --- UPDATED SPAWN LOGIC PER PDF REQUIREMENTS ---
-// --- UPDATED SPAWN LOGIC: MULTI-ENEMY SUPPORT ---
-    private void spawnNextEnemy() {
-        // 1. Determine how many enemies should be on screen based on Level
-        int maxEnemiesOnScreen = 1;
+    // --- SPAWN LOGIC (HORDE MODE) ---
+    private int getMaxEnemiesForLevel() {
         int pLevel = player.getLevel();
+        if (pLevel >= 20) return 3; // Chaos Mode
+        if (pLevel >= 5) return 2;  // Double Trouble
+        return 1;                   // Duel Mode
+    }
 
-        if (pLevel >= 20) {
-            maxEnemiesOnScreen = 3; // Chaos Mode
-        } else if (pLevel >= 5) {
-            maxEnemiesOnScreen = 2; // Double Trouble
-        }
+    private void spawnNextEnemy() {
+        // Stop if we have enough enemies
+        if (activeEnemies.size() >= getMaxEnemiesForLevel()) return; 
 
-        // 2. If we already have enough enemies, stop spawning
-        if (activeEnemies.size() >= maxEnemiesOnScreen) return;
-
-        // 3. Determine Enemy Type based on Difficulty
+        int playerLevel = player.getLevel();
         String targetName = "Koura"; 
-        if (pLevel < 5) targetName = "Koura";       // Easy
-        else if (pLevel < 10) targetName = "Sark";  // Medium
-        else if (pLevel < 20) targetName = "Rinzler"; // Hard
-        else targetName = "Clu";                    // Impossible
 
-        // 4. Find the template enemy
+        if (playerLevel < 5) targetName = "Koura";       // Easy
+        else if (playerLevel < 10) targetName = "Sark";  // Medium
+        else if (playerLevel < 20) targetName = "Rinzler"; // Hard
+        else targetName = "Clu";                         // Impossible
+
         Enemy candidate = null;
         for (Enemy e : enemyPool) {
             if (e.getName().equalsIgnoreCase(targetName)) {
@@ -331,50 +335,48 @@ public class ArenaController {
                 break;
             }
         }
-        
+
         // Fallbacks
-        if (candidate == null && !enemyPool.isEmpty()) candidate = enemyPool.get(0);
+        if (candidate == null && !enemyPool.isEmpty()) candidate = enemyPool.get(0); 
         if (candidate == null) candidate = new Enemy("Default Drone", "#FF0000", 3.0, 1.0, "Easy", 100, "Normal");
 
-        // 5. Spawn loop (Fill up to the max limit)
-        while (activeEnemies.size() < maxEnemiesOnScreen) {
-            if (candidate != null) {
-                // Buff logic for high levels
-                double speedBuff = (pLevel > 30) ? 0.5 : 0.0;
-                double livesBuff = (pLevel > 30) ? (pLevel - 30) * 0.5 : 0.0;
+        if (candidate != null) {
+            // Buff enemies at high levels (> 30)
+            double buffSpeed = (playerLevel > 30) ? 0.5 : 0.0;
+            double buffLives = (playerLevel > 30) ? (playerLevel - 30) * 0.5 : 0.0;
 
-                Enemy spawned = new Enemy(candidate.getName(), candidate.getColor(), 
-                                          candidate.getLives() + livesBuff, 
-                                          candidate.getSpeed() + speedBuff, 
-                                          "Normal", candidate.getXPReward(), "Normal");
-                
-                // Randomize spawn position slightly so they don't stack on top of each other
-                // Spawn range: X=5-35, Y=5-35 (Safe from walls)
-                int spawnX = 5 + (int)(Math.random() * 30);
-                int spawnY = 5 + (int)(Math.random() * 30);
-                
-                // Make sure they don't spawn on the player
-                if (Math.abs(spawnX - player.getX()) < 5 && Math.abs(spawnY - player.getY()) < 5) {
-                    spawnX = 35; spawnY = 35; // Move corner if too close
-                }
+            // Create fresh copy
+            Enemy spawned = new Enemy(candidate.getName(), candidate.getColor(), 
+                                      candidate.getLives() + buffLives, 
+                                      candidate.getSpeed() + buffSpeed, 
+                                      "Normal", candidate.getXPReward(), "Normal");
+            
+            // Randomize spawn position (Range 5-35)
+            int sx = 5 + (int)(Math.random() * 30);
+            int sy = 5 + (int)(Math.random() * 30);
+            
+            // Prevent spawning on player
+            if (Math.abs(sx - player.getX()) < 5) sx = 35;
 
-                spawned.setPosition(spawnX, spawnY); 
-                activeEnemies.add(spawned);
-                
-                // Only show message for the first one to avoid spam
-                if (activeEnemies.size() == 1) {
-                    showMessage("WAVE INCOMING: " + spawned.getName() + " x" + (maxEnemiesOnScreen - activeEnemies.size() + 1));
-                }
+            spawned.setPosition(sx, sy); 
+            activeEnemies.add(spawned);
+            
+            // Only announce new waves
+            if (activeEnemies.size() == 1) {
+                showMessage("WAVE INCOMING: " + spawned.getName());
             }
         }
     }
 
+    // --- CONTROLS ---
     @FXML
     public void handleKeyPress(KeyEvent event) {
         if (!gameStarted || gameOverTriggered) return; 
-        if (activeEnemies.isEmpty()) return; // Prevent movement before spawn
+        if (activeEnemies.isEmpty()) return;
 
         if (event.getCode() == KeyCode.SPACE) {
+            // SOUND: Play Shoot Sound
+            SoundManager.playSound("shoot.wav");
             discs.add(new Disc(player.getX(), player.getY(), lastFacingDir));
             return;
         }
@@ -387,6 +389,7 @@ public class ArenaController {
         }
     }
 
+    // --- DRAWING ---
     private void draw() {
         GraphicsContext gc = gameCanvas.getGraphicsContext2D();
         gc.setFill(Color.BLACK);
@@ -476,21 +479,19 @@ public class ArenaController {
                 if (line.trim().isEmpty()) continue;
                 String[] data = line.split(",");
                 if (data.length >= 6) {
+                    // Quick Parse: Name, Color, Diff, XP, Speed, Intel
                     String name = data[0].trim();
-                    String colorName = data[1].trim();
-                    String difficulty = data[2].trim();
+                    String color = "#FF0000"; // Default
+                    if (data[1].trim().equalsIgnoreCase("Gold")) color = "#FFD700";
+                    else if (data[1].trim().equalsIgnoreCase("Green")) color = "#00FF00";
+                    
                     int xp = Integer.parseInt(data[3].trim());
                     double speed = Double.parseDouble(data[4].trim());
-                    String intelligence = data[5].trim();
-                    String hexColor = "#FFFFFF";
-                    if (colorName.equalsIgnoreCase("Gold")) hexColor = "#FFD700";
-                    else if (colorName.equalsIgnoreCase("Red")) hexColor = "#FF0000";
-                    else if (colorName.equalsIgnoreCase("Yellow")) hexColor = "#FFFF00";
-                    else if (colorName.equalsIgnoreCase("Green")) hexColor = "#00FF00";
-                    enemyPool.add(new Enemy(name, hexColor, 3.0, speed, difficulty, xp, intelligence));
+                    
+                    enemyPool.add(new Enemy(name, color, 3.0, speed, data[2].trim(), xp, data[5].trim()));
                 }
             }
             scanner.close();
-        } catch (FileNotFoundException e) { e.printStackTrace(); }
+        } catch (Exception e) { e.printStackTrace(); }
     }
 }
