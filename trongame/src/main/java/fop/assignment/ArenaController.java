@@ -79,7 +79,7 @@ public class ArenaController {
         // 1. Load Data FIRST
         loadEnemiesToPool(); 
         
-        // 2. Setup Player (This now fixes the infinite game over loop)
+        // 2. Setup Player
         setupPlayer();
 
         // 3. Spawn Enemy
@@ -90,13 +90,13 @@ public class ArenaController {
 
         model.loadArena1(); 
         
-        // 4. Force a Draw immediately so the screen isn't blank
+        // 4. Force a Draw immediately
         draw();
         
         // 5. Start the loop
         startTaskTimer();
         
-        // 6. FIX: Allow movement immediately, flags are reset in setupPlayer
+        // 6. Allow movement immediately
         gameStarted = true; 
     }
 
@@ -105,12 +105,10 @@ public class ArenaController {
             this.player = App.globalPlayer;
             this.player.setPosition(20, 20);
             
-            // --- FIX 1: RESURRECTION LOGIC ---
-            // If the player is dead (lives <= 0), we MUST reset them.
-            // Otherwise the game loop sees they are dead and triggers Game Over instantly.
+            // Resurrection Logic
             if (!this.player.isAlive()) {
-                this.player.lives = 3.0; // Reset to 3 lives
-                this.player.isAlive = true; // Mark as alive
+                this.player.lives = 3.0; 
+                this.player.isAlive = true; 
                 System.out.println("Player Resurrected!");
             }
         } else {
@@ -120,7 +118,6 @@ public class ArenaController {
             App.globalPlayer = this.player; 
         }
         
-        // Reset Logic Flags
         playerTrail.clear(); 
         gameOverTriggered = false;
         currentDir = Direction.NONE;
@@ -149,7 +146,6 @@ public class ArenaController {
         new AnimationTimer() {
             @Override
             public void handle(long now) {
-                // If game is over, we stop updating logic, but we still draw (for fading text)
                 if (!gameOverTriggered) {
                     long currentDelay = model.isSpeedBoostActive() ? speedNanos / 2 : speedNanos;
                     if (now - lastUpdate >= currentDelay) {
@@ -164,11 +160,8 @@ public class ArenaController {
     }   
 
     private void updateGame() {
-        // --- FIX 2: PREVENT UPDATES IF NO ENEMY YET ---
-        // This ensures the game doesn't run logic if the enemy spawn glitched
         if (activeEnemies.isEmpty()) {
             spawnNextEnemy();
-            // If still empty after trying to spawn, skip this frame
             if (activeEnemies.isEmpty()) return; 
         }
 
@@ -307,49 +300,79 @@ public class ArenaController {
         } catch (Exception ex) { ex.printStackTrace(); }
     }
 
+    // --- UPDATED SPAWN LOGIC PER PDF REQUIREMENTS ---
+// --- UPDATED SPAWN LOGIC: MULTI-ENEMY SUPPORT ---
     private void spawnNextEnemy() {
-        if (!activeEnemies.isEmpty()) return; 
+        // 1. Determine how many enemies should be on screen based on Level
+        int maxEnemiesOnScreen = 1;
+        int pLevel = player.getLevel();
 
-        int playerLevel = player.getLevel();
+        if (pLevel >= 20) {
+            maxEnemiesOnScreen = 3; // Chaos Mode
+        } else if (pLevel >= 5) {
+            maxEnemiesOnScreen = 2; // Double Trouble
+        }
+
+        // 2. If we already have enough enemies, stop spawning
+        if (activeEnemies.size() >= maxEnemiesOnScreen) return;
+
+        // 3. Determine Enemy Type based on Difficulty
         String targetName = "Koura"; 
+        if (pLevel < 5) targetName = "Koura";       // Easy
+        else if (pLevel < 10) targetName = "Sark";  // Medium
+        else if (pLevel < 20) targetName = "Rinzler"; // Hard
+        else targetName = "Clu";                    // Impossible
 
-        if (playerLevel >= 10) targetName = "Clu";
-        else if (playerLevel >= 6) targetName = "Rinzler";
-        else if (playerLevel >= 3) targetName = "Sark";
-
+        // 4. Find the template enemy
         Enemy candidate = null;
         for (Enemy e : enemyPool) {
             if (e.getName().equalsIgnoreCase(targetName)) {
-                candidate = new Enemy(e.getName(), e.getColor(), e.getLives(), e.getSpeed(), "Normal", e.getXPReward(), "Normal");
+                candidate = e;
                 break;
             }
         }
+        
+        // Fallbacks
+        if (candidate == null && !enemyPool.isEmpty()) candidate = enemyPool.get(0);
+        if (candidate == null) candidate = new Enemy("Default Drone", "#FF0000", 3.0, 1.0, "Easy", 100, "Normal");
 
-        // --- FIX 3: SAFE FALLBACK ---
-        // If we couldn't find the specific enemy (e.g. "Clu" not in text file), pick the first one available.
-        if (candidate == null && !enemyPool.isEmpty()) candidate = enemyPool.get(0); 
+        // 5. Spawn loop (Fill up to the max limit)
+        while (activeEnemies.size() < maxEnemiesOnScreen) {
+            if (candidate != null) {
+                // Buff logic for high levels
+                double speedBuff = (pLevel > 30) ? 0.5 : 0.0;
+                double livesBuff = (pLevel > 30) ? (pLevel - 30) * 0.5 : 0.0;
 
-        // If the file was empty or missing, create a dummy default enemy
-        if (candidate == null) {
-            candidate = new Enemy("Default Drone", "#FF0000", 3.0, 1.0, "Easy", 100, "Normal");
-        }
+                Enemy spawned = new Enemy(candidate.getName(), candidate.getColor(), 
+                                          candidate.getLives() + livesBuff, 
+                                          candidate.getSpeed() + speedBuff, 
+                                          "Normal", candidate.getXPReward(), "Normal");
+                
+                // Randomize spawn position slightly so they don't stack on top of each other
+                // Spawn range: X=5-35, Y=5-35 (Safe from walls)
+                int spawnX = 5 + (int)(Math.random() * 30);
+                int spawnY = 5 + (int)(Math.random() * 30);
+                
+                // Make sure they don't spawn on the player
+                if (Math.abs(spawnX - player.getX()) < 5 && Math.abs(spawnY - player.getY()) < 5) {
+                    spawnX = 35; spawnY = 35; // Move corner if too close
+                }
 
-        if (candidate != null) {
-            // Create a COPY of the enemy for the arena (so we don't modify the pool version)
-            Enemy spawned = new Enemy(candidate.getName(), candidate.getColor(), candidate.getLives(), candidate.getSpeed(), "Normal", candidate.getXPReward(), "Normal");
-            spawned.setPosition(35, 35); 
-            activeEnemies.add(spawned);
-            showMessage("NEW CHALLENGER: " + spawned.getName());
+                spawned.setPosition(spawnX, spawnY); 
+                activeEnemies.add(spawned);
+                
+                // Only show message for the first one to avoid spam
+                if (activeEnemies.size() == 1) {
+                    showMessage("WAVE INCOMING: " + spawned.getName() + " x" + (maxEnemiesOnScreen - activeEnemies.size() + 1));
+                }
+            }
         }
     }
 
     @FXML
     public void handleKeyPress(KeyEvent event) {
         if (!gameStarted || gameOverTriggered) return; 
-        
-        // --- FIX 4: MOVEMENT CHECK ---
-        // Prevent movement if the enemy hasn't spawned yet
-        if (activeEnemies.isEmpty()) return;
+        if (activeEnemies.isEmpty()) return; // Prevent movement before spawn
 
         if (event.getCode() == KeyCode.SPACE) {
             discs.add(new Disc(player.getX(), player.getY(), lastFacingDir));
