@@ -86,6 +86,8 @@ chapter10.scene2: "I did exactly what you programmed me to do!"
 chapter10.scene3: The final battle for the future of the Grid begins.
 chapter10.scene4: Make your choice, Program.
 
-# ---------- ENDINGS (Optional expansion) ----------
-ending.hero: The Grid is rebooted. The sun rises over a free system.
-ending.villain: You sit upon the throne. Perfection is absolute.
+# HERO ENDING (Tron's Path)
+ending_hero.scene1: The Grid is rebooted. The sun rises over a free system.
+
+# VILLAIN ENDING (Kevin's/Dark Path)
+ending_villain.scene1: You sit upon the throne. Perfection is absolute.

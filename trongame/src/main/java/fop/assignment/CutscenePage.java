@@ -59,32 +59,28 @@ public class CutscenePage {
         if (storyData.containsKey(sceneId)) {
             storyLabel.setText(storyData.get(sceneId));
 
-            // 2. Load the image from Project Folder (Not Classpath)
-            // Path example: "images/chapter2.scene1.png"
+            // 2. Load the image from Project Folder (Standard File logic)
             String imagePath = "images/" + sceneId + ".png"; 
             
             try {
-                // --- FIX STARTS HERE ---
                 File file = new File(imagePath);
                 
                 // Debugging print
                 System.out.println("Loading Cutscene Image: " + file.getAbsolutePath());
 
                 if (file.exists()) {
-                    // Load using file URI (Standard method for local files)
+                    // Load using file URI (Fixes path issues)
                     cutsceneImage.setImage(new Image(file.toURI().toString()));
                 } else {
                     System.out.println("ERROR: Image file missing at: " + imagePath);
-                    cutsceneImage.setImage(null); // Clear previous image
+                    cutsceneImage.setImage(null); 
                 }
-                // --- FIX ENDS HERE ---
-                
             } catch (Exception e) {
                 System.out.println("ERROR: Could not load image.");
                 e.printStackTrace();
             }
         } else {
-            // No more scenes in this chapter? Go back to Game.
+            // No more scenes? Decide where to go next.
             enterGame();
         }
     }
@@ -97,8 +93,18 @@ public class CutscenePage {
 
     private void enterGame() {
         try {
-            System.out.println("End of Chapter. Entering Game Arena...");
-            App.setRoot("Arena"); 
+            // --- NEW: ENDING CHECK ---
+            if (currentChapter.startsWith("ending")) {
+                System.out.println("Game Completed. Returning to Main Menu.");
+                // Reset player so next game is fresh (Optional)
+                App.globalPlayer = null; 
+                App.setRoot("StartPage"); 
+            } 
+            else {
+                // Normal Chapter -> Continue Playing
+                System.out.println("End of Chapter. Entering Game Arena...");
+                App.setRoot("Arena");
+            }
         } catch (IOException e) {
             e.printStackTrace();
         }

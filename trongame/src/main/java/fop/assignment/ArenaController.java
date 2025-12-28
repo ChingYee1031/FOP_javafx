@@ -98,7 +98,7 @@ public class ArenaController {
         javafx.application.Platform.runLater(() -> gameCanvas.requestFocus());
     }
 
-private void setupPlayer() {
+    private void setupPlayer() {
         // 1. Load Player Data
         if (App.globalPlayer != null) {
             this.player = App.globalPlayer;
@@ -106,29 +106,29 @@ private void setupPlayer() {
             this.player = new Player("Tron", "#00FFFF", 3.0, 1.5);
         }
 
-        // 2. Set Position
+        // 2. Set Position & Restore Lives
         int startX = 20;
         int startY = 20;
         player.setPosition(startX, startY);
         player.setLives(player.getLives() <= 0 ? 3 : player.getLives()); 
 
-        // --- NEW: FORCE SAFETY ZONE ---
-        // Clear the spawn point and the immediate surrounding cells
-        // so the player doesn't spawn inside a wall or enemy.
+        // --- SAFE SPAWN ZONE ---
+        // Clear walls/trails around spawn so you don't instantly die
         for (int i = startX - 2; i <= startX + 2; i++) {
             for (int j = startY - 2; j <= startY + 2; j++) {
                 if (i >= 0 && i < 40 && j >= 0 && j < 40) {
-                    model.getGrid()[i][j] = 0; // Clear walls
+                    model.getGrid()[i][j] = 0; 
                 }
             }
         }
-        // Also move any enemies that might be camping the spawn
+        // Move enemies away from spawn
         for (Enemy e : activeEnemies) {
             if (Math.abs(e.getX() - startX) < 5 && Math.abs(e.getY() - startY) < 5) {
-                e.setPosition(5, 5); // Teleport camper away
+                e.setPosition(5, 5); 
             }
         }
     }
+
     private void loadLevelArena() {
         int level = player.getLevel();
         if (level < 10) model.loadArena1();
@@ -170,7 +170,7 @@ private void setupPlayer() {
         }
 
         // ==========================================
-        // 1. PLAYER MOVEMENT & COLLISION LOGIC
+        // 1. PLAYER MOVEMENT & COLLISION
         // ==========================================
         int nextX = player.getX();
         int nextY = player.getY();
@@ -185,26 +185,23 @@ private void setupPlayer() {
 
         if (currentDir != Direction.NONE) {
             
-            // A. FALLING OFF THE GRID (Requirement: Remove ALL lives)
+            // A. FALLING OFF THE GRID (Instant Death)
             if (nextX < 0 || nextX >= 40 || nextY < 0 || nextY >= 40) {
                 System.out.println("FATAL: Player fell off the Grid!");
                 SoundManager.playSound("fall.wav"); 
-                player.reduceLives(player.getLives()); // Instant Death
+                player.reduceLives(player.getLives()); 
                 triggerGameOverSequence();
                 return;
             }
 
-            // B. WALL/OBSTACLE COLLISION (Requirement: Remove 0.5 lives)
-            // Check next cell: 1=Wall, 2=Trail
+            // B. WALL/OBSTACLE COLLISION (-0.5 Lives)
             int nextCell = model.getGrid()[nextX][nextY];
             
             if (nextCell == 1 || nextCell == 2) {
                 SoundManager.playSound("crash.wav");
                 player.reduceLives(0.5); 
                 spawnFloatingText("-0.5 HP", player.getX(), player.getY(), Color.ORANGE);
-                
-                // Stop movement so they don't walk inside the wall
-                currentDir = Direction.NONE; 
+                currentDir = Direction.NONE; // Stop movement
             } 
             else {
                 // C. VALID MOVE
@@ -219,7 +216,7 @@ private void setupPlayer() {
         }
 
         // ==========================================
-        // 2. DISC LOGIC (Combat)
+        // 2. DISC LOGIC
         // ==========================================
         for (int i = 0; i < discs.size(); i++) {
             Disc d = discs.get(i);
@@ -228,7 +225,6 @@ private void setupPlayer() {
             // A. MAGNETIC PICKUP
             if (d.isStationary() && d.isActive()) {
                 if (d.getOwner() == player) {
-                    // Distance check (within 1.5 blocks)
                     double dist = Math.abs(player.getX() - d.getX()) + Math.abs(player.getY() - d.getY());
                     if (dist <= 1.5) { 
                         SoundManager.playSound("pickup.wav");
@@ -237,9 +233,8 @@ private void setupPlayer() {
                 }
             }
 
-            // B. COLLISION (Requirement: Being struck = -1 life)
+            // B. COLLISION
             if (!d.isStationary() && d.isActive()) {
-                
                 // Enemy Disc hits Player
                 if (d.getOwner() != player) {
                     if (player.getX() == d.getX() && player.getY() == d.getY()) {
@@ -249,7 +244,6 @@ private void setupPlayer() {
                         d.returnToOwner(); 
                     }
                 }
-
                 // Player Disc hits Enemy
                 if (d.getOwner() == player) {
                     for (Enemy e : activeEnemies) {
@@ -270,7 +264,7 @@ private void setupPlayer() {
         }
 
         // ==========================================
-        // 3. ENEMY LOGIC (Movement + Shooting)
+        // 3. ENEMY LOGIC
         // ==========================================
         while (enemyTrails.size() < activeEnemies.size()) enemyTrails.add(new LinkedList<>());
 
@@ -283,17 +277,15 @@ private void setupPlayer() {
                 i--; continue;
             }
 
-            // AI Shooting Logic
+            // AI Shooting
             if (e.canShoot()) {
                 boolean shoot = false;
                 int shotDir = -1;
-                // Vertical check
                 if (e.getX() == player.getX()) {
                     int dist = player.getY() - e.getY();
                     if (dist > 0 && dist < 10) { shotDir = 1; shoot = true; }
                     else if (dist < 0 && dist > -10) { shotDir = 0; shoot = true; }
                 }
-                // Horizontal check
                 else if (e.getY() == player.getY()) {
                     int dist = player.getX() - e.getX();
                     if (dist > 0 && dist < 10) { shotDir = 3; shoot = true; }
@@ -323,13 +315,12 @@ private void setupPlayer() {
         }
     }
 
-    // --- GAME OVER WITH AUTO-SAVE ---
+    // --- GAME OVER ---
     private void triggerGameOverSequence() {
         gameOverTriggered = true;
         gameStarted = false; 
         System.out.println("Player Died. Triggering Game Over Sequence.");
 
-        // SAVE LOGIC
         if (App.globalPlayer != null && App.globalPassword != null) {
             System.out.println("Auto-Saving progress...");
             App.globalPlayer.setLevel(player.getLevel());
@@ -351,41 +342,69 @@ private void setupPlayer() {
         pause.play();
     }
 
-    // --- ENEMY DEATH ---
-// --- ENEMY DEATH ---
+    // --- ENEMY DEATH & VICTORY CHECK ---
     private void handleEnemyDeath(Enemy e, int index) {
         int oldLevel = player.getLevel();
         
-        // 1. Give Rewards
         player.addXP(e.getXPReward()); 
         spawnFloatingText("+" + e.getXPReward() + " XP", player.getX(), player.getY(), Color.GOLD);
         showMessage("DEFEATED " + e.getName());
 
-        // 2. Check Level Up
         int newLevel = player.getLevel();
         if (newLevel > oldLevel) {
             SoundManager.playSound("levelup.wav");
+            
+            // --- 1. VICTORY CHECK (Level 99) ---
+            if (newLevel >= 99) {
+                triggerGameWinSequence();
+                return; // Stop further processing
+            }
+
+            // --- 2. Normal Story Check ---
             boolean storyTriggered = checkStoryProgression(newLevel);
             if (!storyTriggered && (newLevel == 20 || newLevel == 30)) {
                 triggerArenaUpgradeSequence(newLevel);
             }
         }
 
-        // 3. CLEANUP LOGIC (The Fix)
+        // --- 3. CLEANUP (Erase Enemy Walls) ---
         if (index < activeEnemies.size()) {
-            // A. Get the trail belonging to this specific enemy
             Queue<int[]> deadTrail = enemyTrails.get(index);
-            
-            // B. Erase every block of that trail from the grid
             for (int[] pos : deadTrail) {
-                // Set grid back to 0 (Empty)
                 model.getGrid()[pos[0]][pos[1]] = 0; 
             }
-            
-            // C. Remove Enemy and Trail from the lists
             activeEnemies.remove(index);
             enemyTrails.remove(index);
         }
+    }
+
+    // --- NEW: WIN SEQUENCE ---
+    private void triggerGameWinSequence() {
+        gameStarted = false;
+        if (gameTimer != null) gameTimer.stop();
+        
+        System.out.println("VICTORY REACHED! Level " + player.getLevel());
+        
+        // Choose ending based on Character
+        String endingChapter = "ending_hero"; // Default (Tron)
+        if (player.getName().equalsIgnoreCase("Kevin")) {
+            endingChapter = "ending_villain";
+        }
+        
+        final String finalChapter = endingChapter;
+
+        showMessage("SYSTEM LIBERATED!");
+        SoundManager.stopMusic();
+        SoundManager.playSound("win.wav"); // Ensure you have this sound
+
+        PauseTransition pause = new PauseTransition(Duration.seconds(4));
+        pause.setOnFinished(ev -> {
+            try {
+                // Go to the specific ending cutscene
+                App.goToCutscene(finalChapter);
+            } catch (Exception ex) { ex.printStackTrace(); }
+        });
+        pause.play();
     }
 
     private void triggerArenaUpgradeSequence(int level) {
@@ -421,7 +440,7 @@ private void setupPlayer() {
                 gameStarted = false;
                 if (gameTimer != null) gameTimer.stop(); 
                 
-                // SAVE BEFORE CUTSCENE
+                // Save before cutscene
                 if (App.globalPlayer != null && App.globalPassword != null) {
                     System.out.println("Story Event: Saving Progress...");
                     App.globalPlayer.setLevel(player.getLevel());
@@ -436,7 +455,6 @@ private void setupPlayer() {
         return false; 
     }
 
-    // --- SPAWN LOGIC ---
     private int getMaxEnemiesForLevel() {
         int pLevel = player.getLevel();
         if (pLevel >= 20) return 3; 
@@ -462,7 +480,6 @@ private void setupPlayer() {
                 break;
             }
         }
-
         if (candidate == null && !enemyPool.isEmpty()) candidate = enemyPool.get(0); 
         if (candidate == null) candidate = new Enemy("Default Drone", "#FF0000", 3.0, 1.0, "Easy", 100, "Normal");
 
@@ -481,10 +498,7 @@ private void setupPlayer() {
 
             spawned.setPosition(sx, sy); 
             activeEnemies.add(spawned);
-            
-            if (activeEnemies.size() == 1) {
-                showMessage("WAVE INCOMING: " + spawned.getName());
-            }
+            if (activeEnemies.size() == 1) showMessage("WAVE INCOMING: " + spawned.getName());
         }
     }
 
@@ -492,7 +506,6 @@ private void setupPlayer() {
     public void handleKeyPress(KeyEvent event) {
         if (!gameStarted || gameOverTriggered) return; 
         
-        // 1. Shooting (Spacebar)
         if (event.getCode() == KeyCode.SPACE) {
             if (player.hasAmmo()) { 
                 SoundManager.playSound("shoot.wav");
@@ -504,71 +517,52 @@ private void setupPlayer() {
             return;
         }
 
-        // 2. Movement & Cheats
         switch (event.getCode()) {
             case W: if (currentDir != Direction.DOWN) currentDir = Direction.UP; break;
             case S: if (currentDir != Direction.UP)   currentDir = Direction.DOWN; break;
             case A: if (currentDir != Direction.RIGHT) currentDir = Direction.LEFT; break;
             case D: if (currentDir != Direction.LEFT)  currentDir = Direction.RIGHT; break;
 
-            case L: 
-                // CHEAT: Only triggers story if level changes
+            case L: // CHEAT
                 int oldCheatLevel = player.getLevel();
-                player.addXP(100); 
+                player.addXP(5000); 
                 System.out.println("CHEAT: Level is now " + player.getLevel());
                 if (player.getLevel() > oldCheatLevel) {
-                     checkStoryProgression(player.getLevel()); 
+                    if (player.getLevel() >= 99) triggerGameWinSequence(); 
+                    else checkStoryProgression(player.getLevel()); 
                 }
                 break;
             default: break;
         }
     }
 
-    // --- DRAWING ---
-private void draw() {
+    private void draw() {
         GraphicsContext gc = gameCanvas.getGraphicsContext2D();
-        
-        // 1. Background
         gc.setFill(Color.BLACK);
         gc.fillRect(0, 0, gameCanvas.getWidth(), gameCanvas.getHeight());
 
-        // 2. Draw Trails with GLOW logic
         int[][] grid = model.getGrid();
         for (int x = 0; x < 40; x++) {
             for (int y = 0; y < 40; y++) {
                 if (grid[x][y] == 1) { 
-                    // WALLS (Grey)
                     gc.setFill(Color.web("#333333")); 
                     gc.fillRect(x*CELL, y*CELL, CELL-1, CELL-1); 
                 } 
                 else if (grid[x][y] == 2) { 
-                    // PLAYER TRAILS (Cyan Glow)
-                    // We draw a slightly larger, transparent box behind to simulate glow
-                    gc.setFill(Color.web("#37e1e1ff", 0.3)); // Faint glow
+                    gc.setFill(Color.web("#00FFFF", 0.3)); // Glow
                     gc.fillRect(x*CELL - 2, y*CELL - 2, CELL+4, CELL+4);
-                    
-                    gc.setFill(Color.web("#00FFFF")); // Solid core
+                    gc.setFill(Color.web("#00FFFF")); 
                     gc.fillRect(x*CELL, y*CELL, CELL-1, CELL-1); 
                 } 
-                else if (grid[x][y] == 3) { 
-                    // ENEMY TRAILS (Orange/Red Glow) (Assuming you map Enemy trails to 3 later)
-                    // If you aren't mapping enemies to 3 yet, you can skip this block
-                    gc.setFill(Color.ORANGE); 
-                    gc.fillRect(x*CELL, y*CELL, CELL-1, CELL-1); 
-                }
             }
         }
 
-        // 3. Draw Discs (Add a ring for visibility)
         for (Disc d : discs) d.draw(gc, CELL);
-
-        // 4. Draw Characters
         drawCharacter(gc, player);
         for (Enemy e : activeEnemies) drawCharacter(gc, e);
-        
-        // 5. HUD
         drawHUD(gc);
     }
+
     private void drawCharacter(GraphicsContext gc, GameCharacter c) {
         if (c != null && c.isAlive()) {
             if (c instanceof Enemy && ((Enemy)c).getIcon() != null) {
@@ -590,9 +584,7 @@ private void draw() {
         
         if (player != null) {
             double displayLives = Math.max(0, player.getLives());
-            // Show Ammo Count
             String ammoStr = "DISC: " + player.getCurrentAmmo() + "/" + player.getMaxAmmo();
-            
             String stats = String.format("TRON | LVL: %d | XP: %d | LIVES: %.1f | %s", 
                                          player.getLevel(), player.getXP(), displayLives, ammoStr);
             gc.fillText(stats, 20, 27);
@@ -645,10 +637,8 @@ private void draw() {
                     String color = "#FF0000"; 
                     if (data[1].trim().equalsIgnoreCase("Gold")) color = "#FFD700";
                     else if (data[1].trim().equalsIgnoreCase("Green")) color = "#00FF00";
-                    
                     int xp = Integer.parseInt(data[3].trim());
                     double speed = Double.parseDouble(data[4].trim());
-                    
                     enemyPool.add(new Enemy(name, color, 3.0, speed, data[2].trim(), xp, data[5].trim()));
                 }
             }
