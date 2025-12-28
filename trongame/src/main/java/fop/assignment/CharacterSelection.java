@@ -125,6 +125,15 @@ public class CharacterSelection {
     }
 
     private void startGame() throws IOException {
-        App.setRoot("Arena");
+        // Logic: If the player is new (Level 1), show the Intro Story (Chapter 1).
+        // If they are a veteran (Level > 1), skip straight to the Arena.
+        
+        if (App.globalPlayer.getLevel() == 1) {
+            System.out.println("New Game detected. Playing Intro Cutscene...");
+            App.goToCutscene("chapter1"); // <--- This loads the story first
+        } else {
+            System.out.println("Returning Player. Loading Arena directly...");
+            App.setRoot("Arena"); // <--- Skip story for high-level players
+        }
     }
 }
