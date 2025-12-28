@@ -12,8 +12,16 @@ public class Enemy extends GameCharacter {
     private int xpReward;
     private String intelligence; 
     
-    // NEW: Variable to store the image
+    // Image storage
     private Image enemyIcon;
+    
+    // AI State
+    private int currentDir = -1; 
+
+    // --- NEW: SHOOTING LOGIC ---
+    private long lastShotTime = 0;
+    // Shoot roughly every 2 seconds (adjusted by difficulty logic if needed)
+    private static final long SHOOT_DELAY = 2_000_000_000L; 
 
     public Enemy(String name, String color, double lives, double speed, String difficulty, int xpReward, String intelligence) {
         super(name, color, lives, speed);
@@ -21,42 +29,55 @@ public class Enemy extends GameCharacter {
         this.xpReward = xpReward;
         this.intelligence = intelligence;
         
-        // NEW: Load the image as soon as the enemy is created
+        // --- AMMO SETUP ---
+        // Harder enemies get more discs to shoot
+        if (difficulty.equalsIgnoreCase("Impossible")) {
+            this.maxDiscSlots = 3;
+        } else if (difficulty.equalsIgnoreCase("Hard")) {
+            this.maxDiscSlots = 2;
+        } else {
+            this.maxDiscSlots = 1;
+        }
+        this.currentDiscSlots = this.maxDiscSlots;
+        
         loadEnemyImage();
     }
 
     private void loadEnemyImage() {
         try {
-            // This looks for "images/Clu.png", "images/Sark.png" etc.
-            // based on the name from the text file.
             String path = "images/" + this.name + ".png";
             File file = new File(path);
-            
             if (file.exists()) {
                 this.enemyIcon = new Image(file.toURI().toString());
-            } else {
-                System.out.println("Warning: Could not find image at " + path);
             }
         } catch (Exception e) {
             e.printStackTrace();
         }
     }
 
-    // NEW: Allow the controller to get the image
-    public Image getIcon() {
-        return this.enemyIcon;
+    // --- NEW: SHOOTING CHECK ---
+    public boolean canShoot() {
+        // 1. Must have ammo
+        if (!hasAmmo()) return false;
+        
+        // 2. Must respect cooldown
+        long now = System.nanoTime();
+        if (now - lastShotTime > SHOOT_DELAY) {
+            lastShotTime = now;
+            return true;
+        }
+        return false;
     }
 
-    public int getXPReward() {
-        return this.xpReward;
-    }
+    public Image getIcon() { return this.enemyIcon; }
+    public int getXPReward() { return this.xpReward; }
 
-    // AI Logic
+    // --- AI MOVEMENT ---
     public int makeMove(int[][] grid) {
         if (!isAlive()) return -1;
 
         ArrayList<Integer> validMoves = new ArrayList<>();
-        // Check 0=UP, 1=DOWN, 2=LEFT, 3=RIGHT
+        // 0=UP, 1=DOWN, 2=LEFT, 3=RIGHT
         if (isSafe(x, y - 1, grid)) validMoves.add(0); 
         if (isSafe(x, y + 1, grid)) validMoves.add(1); 
         if (isSafe(x - 1, y, grid)) validMoves.add(2); 
@@ -67,9 +88,9 @@ public class Enemy extends GameCharacter {
         Random rand = new Random();
         int chosenMove = -1;
 
-        // --- AI PERSONALITY LOGIC ---
+        // Personality Logic
         if (intelligence.equals("Predictable")) {
-            // Sark: Stick to current direction (80% chance)
+            // 80% chance to keep moving in same direction
             if (currentDir != -1 && validMoves.contains(currentDir)) {
                 if (rand.nextDouble() > 0.2) {
                     chosenMove = currentDir;
@@ -77,10 +98,11 @@ public class Enemy extends GameCharacter {
             }
         }
         else if (intelligence.equals("Erratic")) {
-            // Koura: Purely random
+            // Pure random
             chosenMove = validMoves.get(rand.nextInt(validMoves.size()));
         }
 
+        // Fallback or "Normal" intelligence
         if (chosenMove == -1) {
             chosenMove = validMoves.get(rand.nextInt(validMoves.size()));
         }
@@ -91,6 +113,7 @@ public class Enemy extends GameCharacter {
 
     private boolean isSafe(int tx, int ty, int[][] grid) {
         if (tx < 0 || tx >= 40 || ty < 0 || ty >= 40) return false;
+        // Avoid Walls (1) and Trails (2)
         return (grid[tx][ty] != 1 && grid[tx][ty] != 2);
     }
 }

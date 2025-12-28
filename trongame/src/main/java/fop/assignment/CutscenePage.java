@@ -53,21 +53,33 @@ public class CutscenePage {
         });
     }
 
-    private void loadCurrentScene() {
+private void loadCurrentScene() {
         String sceneId = currentChapter + ".scene" + currentSceneNumber;
 
+        // 1. Check if we have text for this scene
         if (storyData.containsKey(sceneId)) {
             storyLabel.setText(storyData.get(sceneId));
 
-            // Load Image (e.g., chapter1.scene1.png)
-            String imagePath = "/fop/assignment/images/" + sceneId + ".png";
+            // 2. Try to load the image
+            // Assuming images are in: src/main/resources/fop/assignment/images/
+            String imagePath = "images/" + sceneId + ".png"; 
+            
             try {
-                cutsceneImage.setImage(new Image(getClass().getResourceAsStream(imagePath)));
+                // Debug print to help you find the error
+                System.out.println("Attempting to load image: " + imagePath);
+                
+                String fullPath = getClass().getResource(imagePath).toExternalForm();
+                cutsceneImage.setImage(new Image(fullPath));
+                
+            } catch (NullPointerException e) {
+                System.out.println("ERROR: Image not found! Check if file exists: " + imagePath);
+                cutsceneImage.setImage(null); // Clear previous image
             } catch (Exception e) {
-                // Keep previous image or show nothing if missing
+                System.out.println("ERROR: Could not load image.");
+                e.printStackTrace();
             }
         } else {
-            // No more scenes? Go to Game.
+            // No more scenes in this chapter? Go back to Game.
             enterGame();
         }
     }
@@ -78,13 +90,14 @@ public class CutscenePage {
         loadCurrentScene();
     }
 
-    private void enterGame() {
-        try {
-            App.setRoot("GamePage"); 
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+private void enterGame() {
+    try {
+        System.out.println("End of Chapter. Entering Game Arena...");
+        App.setRoot("Arena"); // <--- CHANGE THIS to "Arena"
+    } catch (IOException e) {
+        e.printStackTrace();
     }
+}
 
     private void loadStoryFromFile() {
         try {

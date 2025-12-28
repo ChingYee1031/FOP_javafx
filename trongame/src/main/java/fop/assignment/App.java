@@ -15,6 +15,7 @@ public class App extends Application {
     // --- GLOBAL STATE (Saves progress between screens) ---
     public static Player globalPlayer; 
     public static CharacterSelection globalSelectedCharacter;
+    public static String globalPassword;
     
     // Tracks which chapter to show next (Default: chapter1)
     public static String currentChapterId = "chapter1"; 

@@ -5,64 +5,60 @@ public abstract class GameCharacter {
     protected String color;
     protected double lives;
     protected double speed;
-    protected int x, y; 
-    protected boolean isAlive = true;
+    protected int x, y;
     
-    // Fix for "currentDir" error in Enemy.java
-    // 0=UP, 1=DOWN, 2=LEFT, 3=RIGHT, -1=NONE
-    protected int currentDir = -1; 
+    // --- NEW: Ammo System ---
+    protected int maxDiscSlots = 1; 
+    protected int currentDiscSlots = 1;
 
     public GameCharacter(String name, String color, double lives, double speed) {
         this.name = name;
         this.color = color;
         this.lives = lives;
         this.speed = speed;
+        // Default start (Will be overridden by Player logic)
+        this.maxDiscSlots = 1;
+        this.currentDiscSlots = 1;
     }
 
-    // --- METHODS TO FIX ARENA CONTROLLER ERRORS ---
-
-    public String getName() {
-        return name;
-    }
-
-    public double getLives() {
-        return lives;
-    }
-
-    public double getSpeed() {
-        return speed;
-    }
-
-    public String getColor() {
-        return color;
+    // --- MOVEMENT ---
+    public void setPosition(int x, int y) {
+        this.x = x;
+        this.y = y;
     }
 
     public int getX() { return x; }
     public int getY() { return y; }
-    
-    public void setPosition(int x, int y) { 
-        this.x = x; 
-        this.y = y; 
-    }
 
-    public boolean isAlive() { 
-        return lives > 0; 
-    }
-
+    // --- COMBAT & STATS ---
     public void reduceLives(double amount) {
         this.lives -= amount;
-        if (this.lives <= 0) {
-            this.lives = 0;
-            this.isAlive = false;
-        }
+        if (this.lives < 0) this.lives = 0;
     }
 
-    public void setColor(String newColor) {
-        this.color = newColor;
+    public boolean isAlive() {
+        return lives > 0;
     }
-    
-    // Also add this if it is missing, just in case:
-    public void setSpeed(double newSpeed) {
-        this.speed = newSpeed;
+
+    // --- NEW: AMMO METHODS ---
+    public boolean hasAmmo() {
+        return currentDiscSlots > 0;
     }
+
+    public void useAmmo() {
+        if (currentDiscSlots > 0) currentDiscSlots--;
+    }
+
+    public void recoverAmmo() {
+        if (currentDiscSlots < maxDiscSlots) currentDiscSlots++;
+    }
+
+    public int getCurrentAmmo() { return currentDiscSlots; }
+    public int getMaxAmmo() { return maxDiscSlots; }
+
+    // --- GETTERS & SETTERS ---
+    public String getName() { return name; }
+    public String getColor() { return color; }
+    public double getLives() { return lives; }
+    public double getSpeed() { return speed; }
 }

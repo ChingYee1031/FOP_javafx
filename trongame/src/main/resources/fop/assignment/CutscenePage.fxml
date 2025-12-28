@@ -6,15 +6,40 @@
 <?import javafx.scene.layout.StackPane?>
 <?import javafx.scene.text.Font?>
 
-<StackPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="400.0" prefWidth="600.0" xmlns="http://javafx.com/javafx/13" xmlns:fx="http://javafx.com/fxml/1" fx:controller="fop.assignment.CutscenePage">
+<StackPane prefHeight="600.0" prefWidth="800.0" style="-fx-background-color: black;" xmlns="http://javafx.com/javafx/13" xmlns:fx="http://javafx.com/fxml/1" fx:controller="fop.assignment.CutscenePage">
    <children>
-      <ImageView fx:id="cutsceneImage" fitHeight="480.0" fitWidth="640.0" focusTraversable="true" pickOnBounds="true" />
-      <Label fx:id="storyLabel" textFill="WHITE" StackPane.alignment="BOTTOM_CENTER">
+      <ImageView fx:id="cutsceneImage" fitHeight="600.0" fitWidth="800.0" pickOnBounds="true" preserveRatio="true" />
+      
+      <Label fx:id="titleLabel" text="CHAPTER TITLE" textFill="#00ffff" StackPane.alignment="TOP_CENTER">
          <StackPane.margin>
-            <Insets bottom="70.0" />
+            <Insets top="30.0" />
          </StackPane.margin>
          <font>
-            <Font name="Arial" size="13.0" />
+            <Font name="Impact" size="36.0" />
+         </font>
+         <style>-fx-effect: dropshadow(three-pass-box, black, 10, 0, 0, 0);</style>
+      </Label>
+
+      <Label fx:id="storyLabel" text="Story text appears here..." textFill="WHITE" wrapText="true" maxWidth="700.0" textAlignment="CENTER" StackPane.alignment="BOTTOM_CENTER">
+         <StackPane.margin>
+            <Insets bottom="60.0" />
+         </StackPane.margin>
+         <font>
+            <Font name="Arial Bold" size="18.0" />
+         </font>
+         <style>
+             -fx-background-color: rgba(0, 0, 0, 0.7); 
+             -fx-padding: 15; 
+             -fx-background-radius: 10;
+         </style>
+      </Label>
+      
+      <Label text="[ PRESS SPACE TO CONTINUE ]" textFill="LIGHTGRAY" StackPane.alignment="BOTTOM_RIGHT">
+         <StackPane.margin>
+            <Insets bottom="15.0" right="15.0" />
+         </StackPane.margin>
+         <font>
+            <Font name="Consolas" size="12.0" />
          </font>
       </Label>
    </children>
