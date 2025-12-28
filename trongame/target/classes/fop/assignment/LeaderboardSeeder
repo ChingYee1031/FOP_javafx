@@ -1,0 +1,20 @@
+package leaderboard;
+
+public class LeaderboardSeeder {
+
+    public static void main(String[] args) {
+
+        LeaderboardManager.add("Alice", 5, 1200);
+        LeaderboardManager.add("Bob", 4, 950);
+        LeaderboardManager.add("Charlie", 6, 1600);
+        LeaderboardManager.add("Daisy", 3, 700);
+        LeaderboardManager.add("Ethan", 7, 1800);
+        LeaderboardManager.add("Fiona", 5, 1100);
+        LeaderboardManager.add("George", 2, 400);
+        LeaderboardManager.add("Hannah", 6, 1550);
+        LeaderboardManager.add("Ivan", 4, 900);
+        LeaderboardManager.add("Julia", 8, 2000);
+
+        System.out.println("Leaderboard seeded successfully.");
+    }
+}

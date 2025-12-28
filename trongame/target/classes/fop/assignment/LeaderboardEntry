@@ -1,0 +1,34 @@
+package leaderboard;
+
+import java.time.LocalDate;
+
+public class LeaderboardEntry {
+
+    private String name;
+    private int level;
+    private int score;
+    private LocalDate date;
+
+    public LeaderboardEntry(String name, int level, int score, LocalDate date) {
+        this.name = name;
+        this.level = level;
+        this.score = score;
+        this.date = date;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public int getLevel() {
+        return level;
+    }
+
+    public int getScore() {
+        return score;
+    }
+
+    public LocalDate getDate() {
+        return date;
+    }
+}
