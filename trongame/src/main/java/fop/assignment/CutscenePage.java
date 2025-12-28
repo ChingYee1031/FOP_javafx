@@ -16,7 +16,7 @@ import javafx.scene.input.KeyCode;
 
 public class CutscenePage {
 
-    @FXML private Label titleLabel; // NEW: Needs to be added to FXML
+    @FXML private Label titleLabel; 
     @FXML private Label storyLabel;
     @FXML private ImageView cutsceneImage;
 
@@ -30,8 +30,7 @@ public class CutscenePage {
         this.currentChapter = App.currentChapterId; 
         this.currentSceneNumber = 1; 
 
-        // --- NEW: Set the Chapter Title ---
-        // Looks for "chapter1" in the text file
+        // Set the Chapter Title
         if (storyData.containsKey(currentChapter)) {
             titleLabel.setText(storyData.get(currentChapter));
         } else {
@@ -53,27 +52,33 @@ public class CutscenePage {
         });
     }
 
-private void loadCurrentScene() {
+    private void loadCurrentScene() {
         String sceneId = currentChapter + ".scene" + currentSceneNumber;
 
         // 1. Check if we have text for this scene
         if (storyData.containsKey(sceneId)) {
             storyLabel.setText(storyData.get(sceneId));
 
-            // 2. Try to load the image
-            // Assuming images are in: src/main/resources/fop/assignment/images/
+            // 2. Load the image from Project Folder (Not Classpath)
+            // Path example: "images/chapter2.scene1.png"
             String imagePath = "images/" + sceneId + ".png"; 
             
             try {
-                // Debug print to help you find the error
-                System.out.println("Attempting to load image: " + imagePath);
+                // --- FIX STARTS HERE ---
+                File file = new File(imagePath);
                 
-                String fullPath = getClass().getResource(imagePath).toExternalForm();
-                cutsceneImage.setImage(new Image(fullPath));
+                // Debugging print
+                System.out.println("Loading Cutscene Image: " + file.getAbsolutePath());
+
+                if (file.exists()) {
+                    // Load using file URI (Standard method for local files)
+                    cutsceneImage.setImage(new Image(file.toURI().toString()));
+                } else {
+                    System.out.println("ERROR: Image file missing at: " + imagePath);
+                    cutsceneImage.setImage(null); // Clear previous image
+                }
+                // --- FIX ENDS HERE ---
                 
-            } catch (NullPointerException e) {
-                System.out.println("ERROR: Image not found! Check if file exists: " + imagePath);
-                cutsceneImage.setImage(null); // Clear previous image
             } catch (Exception e) {
                 System.out.println("ERROR: Could not load image.");
                 e.printStackTrace();
@@ -90,14 +95,14 @@ private void loadCurrentScene() {
         loadCurrentScene();
     }
 
-private void enterGame() {
-    try {
-        System.out.println("End of Chapter. Entering Game Arena...");
-        App.setRoot("Arena"); // <--- CHANGE THIS to "Arena"
-    } catch (IOException e) {
-        e.printStackTrace();
+    private void enterGame() {
+        try {
+            System.out.println("End of Chapter. Entering Game Arena...");
+            App.setRoot("Arena"); 
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
-}
 
     private void loadStoryFromFile() {
         try {
@@ -107,7 +112,6 @@ private void enterGame() {
                 String line = scanner.nextLine().trim();
                 if (line.isEmpty() || line.startsWith("#")) continue;
 
-                // Split only on the FIRST colon found
                 String[] parts = line.split(":", 2);
                 if (parts.length >= 2) {
                     storyData.put(parts[0].trim(), parts[1].trim());
