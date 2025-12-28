@@ -66,7 +66,7 @@ public class ArenaController {
     private String gameMessage = ""; 
     private long messageTimer = 0;
 
-    @FXML
+@FXML
     public void initialize() {
         gameCanvas.setWidth(40 * CELL);
         gameCanvas.setHeight(40 * CELL);
@@ -77,7 +77,7 @@ public class ArenaController {
         // 2. Setup Player
         setupPlayer();
 
-        // 3. Load Level Arena (Automatic)
+        // 3. Load Level Arena
         loadLevelArena(); 
 
         // 4. Spawn Initial Enemies
@@ -91,11 +91,20 @@ public class ArenaController {
         draw();
         startTaskTimer();
         gameStarted = true; 
-        
         SoundManager.playMusic("bgm.mp3");
 
+        // --- THE FIX IS HERE ---
         gameCanvas.setFocusTraversable(true);
-        javafx.application.Platform.runLater(() -> gameCanvas.requestFocus());
+        
+        // We wait for the scene to be ready, then we "Steal" the key listener back
+        javafx.application.Platform.runLater(() -> {
+            gameCanvas.requestFocus();
+            
+            // CRITICAL: Overwrite the "Cutscene" listener with the "Game" listener
+            if (gameCanvas.getScene() != null) {
+                gameCanvas.getScene().setOnKeyPressed(this::handleKeyPress);
+            }
+        });
     }
 
     private void setupPlayer() {
@@ -138,23 +147,32 @@ public class ArenaController {
     }
 
     // --- GAME LOOP ---
+
     private void startTaskTimer() {
         gameTimer = new AnimationTimer() {
             @Override
             public void handle(long now) {
                 if (!gameOverTriggered) {
+                    
+                    // 1. GAME LOGIC (Throttled - Controls Game Speed)
                     long currentDelay = model.isSpeedBoostActive() ? speedNanos / 2 : speedNanos;
+                    
                     if (now - lastUpdate >= currentDelay) {
-                        updateGame();
-                        draw();
+                        updateGame(); // Move characters, calculate collisions
                         lastUpdate = now;
                     }
+                    
+                    // 2. DRAWING (Unthrottled - Runs at full 60 FPS)
+                    // Moving this OUTSIDE the 'if' makes input feel instant!
+                    draw(); 
                 }
+                
+                // Floating text also needs smooth animation
                 drawFloatingText(gameCanvas.getGraphicsContext2D());
             }
         };
         gameTimer.start(); 
-    }   
+    } 
 
     private void updateGame() {
         // --- HORDE SPAWNER ---
