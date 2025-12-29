@@ -1,80 +1,93 @@
 # ================================
 # TRON STORY FILE — story.txt
-# For StoryEngine.java
+# Logic Aligned with ArenaController.java
 # ================================
 
 # ---------- CHAPTER 1 ----------
-chapter1: INITIATION (Lv 1–9)
-chapter1.scene1: You awaken in a corrupted sector. Bit hovers nearby, blinking rapidly.
-chapter1.scene2: Early XP flows easily as weak enemies derez upon impact.
-chapter1.scene3: Corrupted jetwalls and broken cycles paint a picture of recent devastation.
-chapter1.scene4: A distorted signal echoes from afar - Flynn... but unreadable.
+# Trigger: Start of Game
+chapter1: THE GRID
+chapter1.scene1: You derezz into the Grid. A digital wasteland stretches before you.
+chapter1.scene2: Basic combat protocols initialized.
+chapter1.scene3: Your goal is simple: Survive the cycles.
+chapter1.scene4: Defeat enemies to stabilize your code and level up.
 
 # ---------- CHAPTER 2 ----------
-chapter2: RISING THREAT (Lv 10–18)
-chapter2.scene1: System boost: +1 Life at Level 10.
-chapter2.scene2: Sark observes your battles from an unknown vantage point.
-chapter2.scene3: Corruption intensifies; arena physics destabilize.
-chapter2.scene4: Arena 2 is unlocked.
+# Trigger: Level 10
+# Game Event: Arena 2 (Speed Ramps) & Kevin Flynn Unlocked
+chapter2: ACCELERATION
+chapter2.scene1: SYSTEM UPDATE: User 'Kevin Flynn' signature detected.
+chapter2.scene2: Character Unlocked: You can now play as Kevin Flynn.
+chapter2.scene3: The arena floor shifts. Glowing speed ramps emerge from the ground.
+chapter2.scene4: Arena 2 Unlocked: Use ramps for high-speed combat.
 
 # ---------- CHAPTER 3 ----------
-chapter3: RINZLER’S SHADOW (Lv 19–27)
-chapter3.scene1: A silent presence stalks you - fast, precise, deadly.
-chapter3.scene2: Rinzler appears briefly, his discs humming with red energy.
-chapter3.scene3: You defeat a mini-boss program and gain large XP.
-chapter3.scene4: A path divides - pursue Rinzler or avoid him.
+# Trigger: Level 19
+# Game Event: Approaching Arena 3 (Obstacles) at Level 20
+chapter3: THE BUNKER
+chapter3.scene1: Rinzler's shadow passes overhead. The simulation is hardening.
+chapter3.scene2: WARNING: Arena geometry destabilizing.
+chapter3.scene3: Solid obstacles are forming in the combat zone.
+chapter3.scene4: Arena 3 Imminent: Prepare for close-quarters maneuvering.
 
 # ---------- CHAPTER 4 ----------
-chapter4: ISO REFUGE (Lv 28–36)
-chapter4.scene1: System boost: +1 Life at Level 30.
-chapter4.scene2: You discover ISO remnants surviving in hidden nodes.
-chapter4.scene3: They warn you of Clu's expanding purge.
-chapter4.scene4: Arena 3 unlocks. Your disc range is upgraded.
+# Trigger: Level 28
+# Game Event: Approaching Arena 4 (Open Grid) at Level 30
+chapter4: THE GLITCH
+chapter4.scene1: Critical Error. The outer walls are flickering.
+chapter4.scene2: The ISOs warn you: "The boundaries are falling."
+chapter4.scene3: DANGER: Falling off the grid will result in immediate derezzing.
+chapter4.scene4: Arena 4 Imminent: Randomized Open Grid. Watch your step.
 
 # ---------- CHAPTER 5 ----------
-chapter5: GOLDEN EMPIRE (Lv 37–45)
-chapter5.scene1: Golden-armored troops march under Clu's command.
-chapter5.scene2: Archives reveal Clu resurrected using old backup data.
-chapter5.scene3: Elite soldiers patrol the Grid with unwavering precision.
-chapter5.scene4: Arena 4 unlocks. Prepare for heavy resistance.
+# Trigger: Level 37
+chapter5: GOLDEN ARMY
+chapter5.scene1: Clu has deployed his elite sentries.
+chapter5.scene2: The randomized grid is now swarming with Gold-class enemies.
+chapter5.scene3: Their logic is precise. They do not make mistakes.
+chapter5.scene4: Survive the endless horde to reach the Central Tower.
 
 # ---------- CHAPTER 6 ----------
-chapter6: FRACTURE EXPANDS (Lv 46–54)
-chapter6.scene1: System boost: +1 Life at Level 50.
-chapter6.scene2: Arena sectors collapse one by one.
-chapter6.scene3: The ISO Archivist is captured and taken toward the Central Tower.
-chapter6.scene4: Your disc cooldown receives a major upgrade.
+# Trigger: Level 46
+chapter6: FRACTURE
+chapter6.scene1: The simulation is tearing itself apart.
+chapter6.scene2: Blocks of data float into the sky.
+chapter6.scene3: You capture an intercepted signal from the ISO Archivist.
+chapter6.scene4: "He is in the tower. You must hurry."
 
 # ---------- CHAPTER 7 ----------
-chapter7: CORE TRUTH (Lv 55–63)
-chapter7.scene1: Flynn finally appears - weakened, fragmented.
-chapter7.scene2: He confesses: the Fracture began from his failed rewrite attempt.
-chapter7.scene3: His code collided with Clu's core during synchronization.
-chapter7.scene4: Access to the Central Tower becomes possible.
+# Trigger: Level 55
+chapter7: THE CREATOR
+chapter7.scene1: You find a fragmented code signature... it's Flynn.
+chapter7.scene2: He reveals the truth: "The coup was my fault."
+chapter7.scene3: "I tried to create the perfect system. Clu took that literally."
+chapter7.scene4: To fix the Grid, you must reintegrate the Source Code.
 
 # ---------- CHAPTER 8 ----------
-chapter8: RINZLER REBORN (Lv 64–72)
-chapter8.scene1: Rinzler confronts you in a decisive battle.
-chapter8.scene2: His movements glitch - traces of Tron appear beneath the corruption.
-chapter8.scene3: Choice moment approaches: Purify, Defeat, or Spare him.
-chapter8.scene4: Outcome determines access to the highest sectors.
+# Trigger: Level 64
+chapter8: RINZLER REBORN
+chapter8.scene1: The enforcer blocks your path to the elevator.
+chapter8.scene2: As you fight, his red lights flicker... turning blue for a second.
+chapter8.scene3: TRON LIVES.
+chapter8.scene4: He lowers his disc. The path is open.
 
 # ---------- CHAPTER 9 ----------
-chapter9: MASTER KEY PROTOCOL (Lv 73–81)
-chapter9.scene1: System boost: +1 Disc Slot at Level 75.
-chapter9.scene2: Flynn transfers the Master Key into your disc.
-chapter9.scene3: The Grid destabilizes rapidly as Clu accelerates his takeover.
-chapter9.scene4: You approach the endgame.
+# Trigger: Level 73
+chapter9: MASTER KEY
+chapter9.scene1: You have reached the upper atmosphere of the simulation.
+chapter9.scene2: Clu's rectifier ship looms above.
+chapter9.scene3: You receive the Master Key protocol.
+chapter9.scene4: Maximum power achieved. It ends now.
 
 # ---------- CHAPTER 10 ----------
-chapter10: FINAL CONVERGENCE (Lv 82–90)
-chapter10.scene1: System boost: +1 Life at Level 90.
-chapter10.scene2: Clu stands ready in the Central Tower - perfectly calm.
-chapter10.scene3: Programs across the Grid await your decision.
-chapter10.scene4: The fate of the system is in your hands.
+# Trigger: Level 82
+chapter10: END OF LINE
+chapter10.scene1: The Central Tower. Clu awaits at the throne.
+chapter10.scene2: "I did exactly what you programmed me to do!"
+chapter10.scene3: The final battle for the future of the Grid begins.
+chapter10.scene4: Make your choice, Program.
 
-# ---------- CHAPTER 11 — ENDINGS ----------
-ending.hero: With Flynn's help, you restore the Grid. Light spreads across every sector.
-ending.order: You join Clu. Together you impose absolute perfection and control.
-ending.sacrifice: You destroy the Grid entirely — preventing further corruption at any cost.
-ending.legacy: Tron returns, purified, becoming the Guardian of a newly reborn system.
+# HERO ENDING (Tron's Path)
+ending_hero.scene1: The Grid is rebooted. The sun rises over a free system.
+
+# VILLAIN ENDING (Kevin's/Dark Path)
+ending_villain.scene1: You sit upon the throne. Perfection is absolute.

@@ -6,79 +6,105 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Scanner;
+
 import javafx.fxml.FXML;
+import javafx.scene.Scene;
 import javafx.scene.control.Label;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
+import javafx.scene.input.KeyCode;
 
 public class CutscenePage {
 
-    @FXML
-    private Label storyLabel;
+    @FXML private Label titleLabel; 
+    @FXML private Label storyLabel;
+    @FXML private ImageView cutsceneImage;
 
-    @FXML
-    private ImageView cutsceneImage;
-
-    // Data Storage
     private Map<String, String> storyData = new HashMap<>();
-
-    // State Tracking
-    private String currentChapter = "chapter1"; // Default to Chapter 1
-    private int currentSceneNumber = 1;         // Start at Scene 1
+    private String currentChapter; 
+    private int currentSceneNumber = 1; 
 
     @FXML
     public void initialize() {
-        // 1. Load all text from the file into memory
         loadStoryFromFile();
+        this.currentChapter = App.currentChapterId; 
+        this.currentSceneNumber = 1; 
 
-        // 2. Check if a specific chapter was requested globally (Optional)
-        // if (App.targetChapter != null) currentChapter = App.targetChapter;
+        // Set the Chapter Title
+        if (storyData.containsKey(currentChapter)) {
+            titleLabel.setText(storyData.get(currentChapter));
+        } else {
+            titleLabel.setText("Unknown Chapter");
+        }
 
-        // 3. Display the first scene (e.g., "chapter1.scene1")
         loadCurrentScene();
+        
+        // Setup Keyboard Listeners (Enter/Space)
+        if (storyLabel.getScene() != null) setupInput(storyLabel.getScene());
+        else storyLabel.sceneProperty().addListener((obs, o, n) -> { if (n!=null) setupInput(n); });
+    }
+
+    private void setupInput(Scene scene) {
+        scene.setOnKeyPressed(event -> {
+            if (event.getCode() == KeyCode.ENTER || event.getCode() == KeyCode.SPACE) {
+                handleNext();
+            }
+        });
     }
 
     private void loadCurrentScene() {
-        // Construct the ID: "chapter1" + ".scene" + "1" = "chapter1.scene1"
         String sceneId = currentChapter + ".scene" + currentSceneNumber;
 
-        // Check if this scene actually exists in our Map
+        // 1. Check if we have text for this scene
         if (storyData.containsKey(sceneId)) {
-            // A. Update Text
             storyLabel.setText(storyData.get(sceneId));
 
-            // B. Update Image
-            // Looks for: images/chapter1.scene1.png
-            String imagePath = "images/" + sceneId + ".png";
-            File imageFile = new File(imagePath);
+            // 2. Load the image from Project Folder (Standard File logic)
+            String imagePath = "images/" + sceneId + ".png"; 
+            
+            try {
+                File file = new File(imagePath);
+                
+                // Debugging print
+                System.out.println("Loading Cutscene Image: " + file.getAbsolutePath());
 
-            if (imageFile.exists()) {
-                cutsceneImage.setImage(new Image(imageFile.toURI().toString()));
-            } else {
-                // If image is missing, maybe keep the old one or clear it
-                System.out.println("Image missing: " + imagePath);
+                if (file.exists()) {
+                    // Load using file URI (Fixes path issues)
+                    cutsceneImage.setImage(new Image(file.toURI().toString()));
+                } else {
+                    System.out.println("ERROR: Image file missing at: " + imagePath);
+                    cutsceneImage.setImage(null); 
+                }
+            } catch (Exception e) {
+                System.out.println("ERROR: Could not load image.");
+                e.printStackTrace();
             }
         } else {
-            // If the scene key doesn't exist (e.g., "chapter1.scene5"), 
-            // it means the chapter is over!
+            // No more scenes? Decide where to go next.
             enterGame();
         }
     }
 
     @FXML
     private void handleNext() {
-        // Increment the counter to the next scene (1 -> 2 -> 3)
         currentSceneNumber++; 
-        
-        // Try to load it. 
-        // logic inside loadCurrentScene() will decide if we continue or end.
         loadCurrentScene();
     }
 
     private void enterGame() {
         try {
-            System.out.println("End of Chapter. Entering Game Arena...");
-            App.setRoot("GameArena");
+            // --- NEW: ENDING CHECK ---
+            if (currentChapter.startsWith("ending")) {
+                System.out.println("Game Completed. Returning to Main Menu.");
+                // Reset player so next game is fresh (Optional)
+                App.globalPlayer = null; 
+                App.setRoot("StartPage"); 
+            } 
+            else {
+                // Normal Chapter -> Continue Playing
+                System.out.println("End of Chapter. Entering Game Arena...");
+                App.setRoot("Arena");
+            }
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -86,28 +112,20 @@ public class CutscenePage {
 
     private void loadStoryFromFile() {
         try {
-            File file = new File("story.txt");
-            System.out.println("Looking for story at: " + file.getAbsolutePath()); // DEBUG PRINT
-
+            File file = new File("story.txt"); 
             Scanner scanner = new Scanner(file);
             while (scanner.hasNextLine()) {
                 String line = scanner.nextLine().trim();
-                
-                // Skip comments and empty lines
                 if (line.isEmpty() || line.startsWith("#")) continue;
 
                 String[] parts = line.split(":", 2);
                 if (parts.length >= 2) {
-                    String key = parts[0].trim();
-                    String value = parts[1].trim();
-                    storyData.put(key, value);
-                    System.out.println("Loaded Key: " + key); // DEBUG PRINT
+                    storyData.put(parts[0].trim(), parts[1].trim());
                 }
             }
             scanner.close();
         } catch (FileNotFoundException e) {
-            System.out.println("ERROR: story.txt NOT FOUND!");
-            storyLabel.setText("Error: story.txt not found.");
+            storyLabel.setText("story.txt not found in project root.");
         }
     }
 }

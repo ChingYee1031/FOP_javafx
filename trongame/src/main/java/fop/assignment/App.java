@@ -1,29 +1,49 @@
 package fop.assignment;
 
+import java.io.IOException;
+
 import javafx.application.Application;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
 
-import java.io.IOException;
-
-/**
- * JavaFX App
- */
 public class App extends Application {
-    public static Character chosenCharacter;
+
     private static Scene scene;
+    
+    // --- GLOBAL STATE (Saves progress between screens) ---
+    public static Player globalPlayer; 
+    public static CharacterSelection globalSelectedCharacter;
+    public static String globalPassword;
+    
+    // Tracks which chapter to show next (Default: chapter1)
+    public static String currentChapterId = "chapter1"; 
 
     @Override
     public void start(Stage stage) throws IOException {
-        scene = new Scene(loadFXML("StartPage"), 640, 480);
+        // Start at the Character Selection or Start Page
+        scene = new Scene(loadFXML("StartPage"), 800, 600); // 800x600 for better view
         stage.setScene(scene);
         stage.show();
     }
 
-    static void setRoot(String fxml) throws IOException {
+    public static void setRoot(String fxml) throws IOException {
         scene.setRoot(loadFXML(fxml));
+        
+        // --- NEW: AUTO-RESIZE WINDOW ---
+        // This gets the window (Stage) and tells it to snap to the new content's size
+        if (scene.getWindow() != null) {
+            Stage stage = (Stage) scene.getWindow();
+            stage.sizeToScene(); 
+            stage.centerOnScreen(); // Optional: Keeps the window centered
+        }
+    }
+
+    // NEW: Helper to switch to a specific cutscene
+    public static void goToCutscene(String chapterId) throws IOException {
+        currentChapterId = chapterId;
+        setRoot("CutscenePage");
     }
 
     private static Parent loadFXML(String fxml) throws IOException {
@@ -31,53 +51,7 @@ public class App extends Application {
         return fxmlLoader.load();
     }
 
-    //username
-    public static String currentPlayerName = "";
-
-    //hold current selected character object
-    public static Character globalSelectedCharacter;
-
-    //story progress
-    /*public class App extends Application {
-        public static Map<String, String> storyData = new HashMap<>();
-        public static String targetScene = "";
-        public static int targetLevel = 1;
-
-        @Override
-        public void start(Stage stage) throws IOException {
-            loadStoryKeys();
-
-            scene = new Scene(loadFXML("MainMenu"),640,480);
-            stage.setScene(scene);
-            stage.show();
-        }
-
-        private void loadStoryKeys() {
-           try{
-            File file = new File("story.txt");
-            if(file.exists()){
-                Scanner scanner = new Scanner(file);
-                while(scanner.hasNextLine()){
-                    String line = scanner.nextLine().trim();
-                    if(line.isEmpty() || line.startsWith("#")) continue;
-
-                    String[] parts = line.split(":",2);
-                    if(parts.length >= 1){
-                        storyData.put(parts[0].trim(), parts.length > 1 ? parts[1].trim() : "");
-                    }
-                }
-                scanner.close();
-            }
-        }catch (Exception e){
-               e.printStackTrace();
-               System.out.println("Error loading story keys.");
-           }
-        }
-    }
-        */
-
     public static void main(String[] args) {
         launch();
     }
-
 }

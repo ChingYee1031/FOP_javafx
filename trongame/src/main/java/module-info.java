@@ -1,8 +1,8 @@
 module fop.assignment {
     requires javafx.controls;
     requires javafx.fxml;
-    // ADD THIS LINE:
-    requires transitive javafx.graphics; 
+    requires transitive javafx.graphics;
+    requires javafx.media;
 
     opens fop.assignment to javafx.fxml;
     exports fop.assignment;
