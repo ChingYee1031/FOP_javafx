@@ -68,17 +68,48 @@ public class CharacterSelection {
         } catch (Exception e) { e.printStackTrace(); }
     }
 
-    @FXML
+@FXML
     private void handleSelectTron() throws IOException {
         System.out.println("Tron Selected");
-        updateGlobalCharacter("Tron");
+
+        // FIX: Check if we already have a logged-in player
+        if (App.globalPlayer != null) {
+            // WE HAVE A SAVE FILE!
+            // Don't create a new object. Just update the "skin" (Name/Color)
+            // This PRESERVES your Level and XP.
+            App.globalPlayer.setName("Tron");
+            App.globalPlayer.setColor("#0091ffff"); 
+            // Optional: Update stats if Tron has specific stats
+            App.globalPlayer.setSpeed(1.5); 
+            // DO NOT reset Level or XP here
+        } else {
+            // NO SAVE FILE (Guest Mode)
+            // Create a fresh player
+            App.globalPlayer = new Player("Tron", "#0091ffff", 3.0, 1.5);
+        }
+
+        // Start the game
         startGame();
     }
 
-    @FXML
+@FXML
     private void handleSelectKevin() throws IOException {
         System.out.println("Kevin Selected");
-        updateGlobalCharacter("Kevin");
+
+        // 1. Check if we have a saved game loaded
+        if (App.globalPlayer != null) {
+            // UPDATE EXISTING PLAYER (Keep Level/XP)
+            App.globalPlayer.setName("Kevin");
+            App.globalPlayer.setColor("#ffffffff"); // Orange Color for Kevin
+            
+            // Kevin has slightly different stats (e.g., slower but maybe better handling logic later)
+            App.globalPlayer.setSpeed(1.5); 
+        } else {
+            // NEW GAME (No save file)
+            App.globalPlayer = new Player("Kevin", "#ffffffff", 3.0, 1.5);
+        }
+
+        // 2. Start Game
         startGame();
     }
 
@@ -101,6 +132,15 @@ public class CharacterSelection {
      * Switch to the game arena.
      */
     private void startGame() throws IOException {
-        App.setRoot("Arena");
+        // Logic: If the player is new (Level 1), show the Intro Story (Chapter 1).
+        // If they are a veteran (Level > 1), skip straight to the Arena.
+        
+        if (App.globalPlayer.getLevel() == 1) {
+            System.out.println("New Game detected. Playing Intro Cutscene...");
+            App.goToCutscene("chapter1"); // <--- This loads the story first
+        } else {
+            System.out.println("Returning Player. Loading Arena directly...");
+            App.setRoot("Arena"); // <--- Skip story for high-level players
+        }
     }
 }

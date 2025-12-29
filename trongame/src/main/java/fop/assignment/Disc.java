@@ -5,55 +5,100 @@ import javafx.scene.paint.Color;
 
 public class Disc {
     private int x, y;
-    private int dx, dy; // Direction of movement
-    private boolean active = true; // Is the disc flying or destroyed?
+    private int dir; // 0=Up, 1=Down, 2=Left, 3=Right
+    private boolean active = true;
+    
+    // --- NEW LOGIC FIELDS ---
+    private GameCharacter owner;
+    private int startX, startY;
+    private boolean isStationary = false; // False = Flying, True = On Ground
+    private long landTime = 0;
+    private static final long COOLDOWN_NANOS = 3_000_000_000L; // 5 Seconds
+    
+    public Disc(int x, int y, int dir, GameCharacter owner) {
+        this.x = x;
+        this.y = y;
+        this.startX = x;
+        this.startY = y;
+        this.dir = dir;
+        this.owner = owner;
+    }
 
-    // Constructor: Spawns the disc at the player's position, flying in their direction
-    public Disc(int startX, int startY, int direction) {
-        this.x = startX;
-        this.y = startY;
+    public void update(int[][] grid) {
+        if (!active) return;
+
+        // 1. STATIONARY LOGIC (Waiting on ground)
+        if (isStationary) {
+            // Check 5-second cooldown
+            if (System.nanoTime() - landTime > COOLDOWN_NANOS) {
+                returnToOwner(); // Time's up! Return automatically.
+            }
+            return; // Don't move
+        }
+
+        // 2. FLYING LOGIC
+        int dist = Math.abs(x - startX) + Math.abs(y - startY);
+        if (dist >= 10) {
+            land(); // Reached max range
+            return;
+        }
+
+        // Calculate next step
+        int nextX = x;
+        int nextY = y;
         
-        // 0=UP, 1=DOWN, 2=LEFT, 3=RIGHT
-        // We set the movement speed (1 block per update)
-        switch (direction) {
-            case 0: dx = 0; dy = -1; break; // UP
-            case 1: dx = 0; dy = 1;  break; // DOWN
-            case 2: dx = -1; dy = 0; break; // LEFT
-            case 3: dx = 1; dy = 0;  break; // RIGHT
-            default: active = false; break;
+        switch (dir) {
+            case 0: nextY--; break; // Up
+            case 1: nextY++; break; // Down
+            case 2: nextX--; break; // Left
+            case 3: nextX++; break; // Right
+        }
+
+        // Wall Collision Check
+        if (nextX < 0 || nextX >= 40 || nextY < 0 || nextY >= 40 || grid[nextX][nextY] == 1) {
+            land(); // Hit a wall, stop here
+        } else {
+            // Move
+            x = nextX;
+            y = nextY;
         }
     }
 
-    // Move the disc forward
-    public void update() {
-        x += dx;
-        y += dy;
+    private void land() {
+        this.isStationary = true;
+        this.landTime = System.nanoTime();
+    }
 
-        // Deactivate if it hits map boundaries (0-39)
-        if (x < 0 || x >= 40 || y < 0 || y >= 40) {
-            active = false;
+    public void returnToOwner() {
+        this.active = false; // Remove from screen
+        if (owner != null) {
+            owner.recoverAmmo(); // Give ammo back to owner
         }
     }
 
-    // Draw the disc on the canvas
     public void draw(GraphicsContext gc, int cell) {
         if (!active) return;
-        
-        // Draw the outer glow (Cyan)
-        gc.setFill(Color.CYAN);
-        gc.fillOval(x * cell + 2, y * cell + 2, cell - 4, cell - 4);
-        
-        // Draw the inner white core
-        gc.setFill(Color.WHITE);
-        gc.fillOval(x * cell + 4, y * cell + 4, cell - 8, cell - 8);
+
+        if (isStationary) {
+            // STATIONARY: Dimmed color + Ring
+            gc.setFill(Color.GRAY);
+            gc.fillOval(x * cell + 4, y * cell + 4, cell - 8, cell - 8);
+            
+            gc.setStroke(Color.web(owner.getColor()));
+            gc.setLineWidth(2);
+            gc.strokeOval(x * cell + 4, y * cell + 4, cell - 8, cell - 8);
+        } else {
+            // FLYING: Bright Owner Color
+            gc.setFill(Color.web(owner.getColor())); 
+            gc.fillOval(x * cell + 2, y * cell + 2, cell - 4, cell - 4);
+        }
     }
 
-    // --- Getters and Setters ---
+    // Getters
     public boolean isActive() { return active; }
-    
+    public boolean isStationary() { return isStationary; }
+    public GameCharacter getOwner() { return owner; }
     public int getX() { return x; }
     public int getY() { return y; }
-    
-    // Call this when the disc hits an enemy
-    public void deactivate() { active = false; }
+    public void deactivate() { this.active = false; }
 }

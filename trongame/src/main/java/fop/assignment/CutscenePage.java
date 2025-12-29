@@ -16,7 +16,7 @@ import javafx.scene.input.KeyCode;
 
 public class CutscenePage {
 
-    @FXML private Label titleLabel; // NEW: Needs to be added to FXML
+    @FXML private Label titleLabel; 
     @FXML private Label storyLabel;
     @FXML private ImageView cutsceneImage;
 
@@ -30,8 +30,7 @@ public class CutscenePage {
         this.currentChapter = App.currentChapterId; 
         this.currentSceneNumber = 1; 
 
-        // --- NEW: Set the Chapter Title ---
-        // Looks for "chapter1" in the text file
+        // Set the Chapter Title
         if (storyData.containsKey(currentChapter)) {
             titleLabel.setText(storyData.get(currentChapter));
         } else {
@@ -56,18 +55,32 @@ public class CutscenePage {
     private void loadCurrentScene() {
         String sceneId = currentChapter + ".scene" + currentSceneNumber;
 
+        // 1. Check if we have text for this scene
         if (storyData.containsKey(sceneId)) {
             storyLabel.setText(storyData.get(sceneId));
 
-            // Load Image (e.g., chapter1.scene1.png)
-            String imagePath = "/fop/assignment/images/" + sceneId + ".png";
+            // 2. Load the image from Project Folder (Standard File logic)
+            String imagePath = "images/" + sceneId + ".png"; 
+            
             try {
-                cutsceneImage.setImage(new Image(getClass().getResourceAsStream(imagePath)));
+                File file = new File(imagePath);
+                
+                // Debugging print
+                System.out.println("Loading Cutscene Image: " + file.getAbsolutePath());
+
+                if (file.exists()) {
+                    // Load using file URI (Fixes path issues)
+                    cutsceneImage.setImage(new Image(file.toURI().toString()));
+                } else {
+                    System.out.println("ERROR: Image file missing at: " + imagePath);
+                    cutsceneImage.setImage(null); 
+                }
             } catch (Exception e) {
-                // Keep previous image or show nothing if missing
+                System.out.println("ERROR: Could not load image.");
+                e.printStackTrace();
             }
         } else {
-            // No more scenes? Go to Game.
+            // No more scenes? Decide where to go next.
             enterGame();
         }
     }
@@ -80,7 +93,18 @@ public class CutscenePage {
 
     private void enterGame() {
         try {
-            App.setRoot("GamePage"); 
+            // --- NEW: ENDING CHECK ---
+            if (currentChapter.startsWith("ending")) {
+                System.out.println("Game Completed. Returning to Main Menu.");
+                // Reset player so next game is fresh (Optional)
+                App.globalPlayer = null; 
+                App.setRoot("StartPage"); 
+            } 
+            else {
+                // Normal Chapter -> Continue Playing
+                System.out.println("End of Chapter. Entering Game Arena...");
+                App.setRoot("Arena");
+            }
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -94,7 +118,6 @@ public class CutscenePage {
                 String line = scanner.nextLine().trim();
                 if (line.isEmpty() || line.startsWith("#")) continue;
 
-                // Split only on the FIRST colon found
                 String[] parts = line.split(":", 2);
                 if (parts.length >= 2) {
                     storyData.put(parts[0].trim(), parts[1].trim());

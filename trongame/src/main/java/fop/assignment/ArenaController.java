@@ -66,7 +66,7 @@ public class ArenaController {
     private String gameMessage = ""; 
     private long messageTimer = 0;
 
-    @FXML
+@FXML
     public void initialize() {
         gameCanvas.setWidth(40 * CELL);
         gameCanvas.setHeight(40 * CELL);
@@ -77,106 +77,119 @@ public class ArenaController {
         // 2. Setup Player
         setupPlayer();
 
-        // 3. Initial Spawn
+        // 3. Load Level Arena
+        loadLevelArena(); 
+
+        // 4. Spawn Initial Enemies
         spawnNextEnemy();    
 
-        // 4. UI Setup
+        // 5. Hide Menus
         if (characterMenu != null) characterMenu.setVisible(false);
-        if (arenaMenu != null) arenaMenu.setVisible(true);
+        if (arenaMenu != null) arenaMenu.setVisible(false);
 
-        // 5. Start Game Loop
-        model.loadArena1(); 
+        // 6. Start Game Loop
         draw();
         startTaskTimer();
         gameStarted = true; 
-        
-        // --- SOUND: Start Background Music ---
-        // Make sure "bgm.mp3" is in src/main/resources/fop/assignment/sounds/
         SoundManager.playMusic("bgm.mp3");
+
+        // --- THE FIX IS HERE ---
+        gameCanvas.setFocusTraversable(true);
+        
+        // We wait for the scene to be ready, then we "Steal" the key listener back
+        javafx.application.Platform.runLater(() -> {
+            gameCanvas.requestFocus();
+            
+            // CRITICAL: Overwrite the "Cutscene" listener with the "Game" listener
+            if (gameCanvas.getScene() != null) {
+                gameCanvas.getScene().setOnKeyPressed(this::handleKeyPress);
+            }
+        });
     }
 
     private void setupPlayer() {
+        // 1. Load Player Data
         if (App.globalPlayer != null) {
             this.player = App.globalPlayer;
-            this.player.setPosition(20, 20);
-            
-            // Resurrection Logic: Reset lives if coming from Game Over
-            if (!this.player.isAlive()) {
-                this.player.lives = 3.0; 
-                this.player.isAlive = true; 
-            }
         } else {
-            // Debug Fallback
             this.player = new Player("Tron", "#00FFFF", 3.0, 1.5);
-            this.player.setPosition(20, 20);
-            App.globalPlayer = this.player; 
         }
-        
-        // Reset Logic Flags
-        playerTrail.clear(); 
-        gameOverTriggered = false;
-        currentDir = Direction.NONE;
+
+        // 2. Set Position & Restore Lives
+        int startX = 20;
+        int startY = 20;
+        player.setPosition(startX, startY);
+        player.setLives(player.getLives() <= 0 ? 3 : player.getLives()); 
+
+        // --- SAFE SPAWN ZONE ---
+        // Clear walls/trails around spawn so you don't instantly die
+        for (int i = startX - 2; i <= startX + 2; i++) {
+            for (int j = startY - 2; j <= startY + 2; j++) {
+                if (i >= 0 && i < 40 && j >= 0 && j < 40) {
+                    model.getGrid()[i][j] = 0; 
+                }
+            }
+        }
+        // Move enemies away from spawn
+        for (Enemy e : activeEnemies) {
+            if (Math.abs(e.getX() - startX) < 5 && Math.abs(e.getY() - startY) < 5) {
+                e.setPosition(5, 5); 
+            }
+        }
     }
 
-    // --- MENU ACTIONS ---
-    @FXML private void loadArena1Action() { model.loadArena1(); startGameSession(); }
-    @FXML private void loadArena2Action() { model.loadArena2(); startGameSession(); }
-    @FXML private void loadArena3Action() { model.loadArena3(); startGameSession(); }
-    @FXML private void loadRandomArenaAction() { model.loadRandomArena(); startGameSession(); }
-
-    private void startGameSession() {
-        currentDir = Direction.NONE;
-        gameStarted = true;
-        gameOverTriggered = false;
-        playerTrail.clear();
-        enemyTrails.clear();
-        for (int i=0; i<activeEnemies.size(); i++) enemyTrails.add(new LinkedList<>());
-        
-        if (characterMenu != null) characterMenu.setVisible(false);
-        if (arenaMenu != null) arenaMenu.setVisible(false);
-        gameCanvas.requestFocus(); 
-        draw();
+    private void loadLevelArena() {
+        int level = player.getLevel();
+        if (level < 10) model.loadArena1();
+        else if (level < 20) model.loadArena2();
+        else if (level < 30) model.loadArena3();
+        else model.loadRandomArena();
     }
 
     // --- GAME LOOP ---
-private void startTaskTimer() {
-    // 1. Assign the new timer to the 'gameTimer' variable
-    gameTimer = new AnimationTimer() {
-        @Override
-        public void handle(long now) {
-            if (!gameOverTriggered) {
-                long currentDelay = model.isSpeedBoostActive() ? speedNanos / 2 : speedNanos;
-                if (now - lastUpdate >= currentDelay) {
-                    updateGame();
-                    draw();
-                    lastUpdate = now;
+
+    private void startTaskTimer() {
+        gameTimer = new AnimationTimer() {
+            @Override
+            public void handle(long now) {
+                if (!gameOverTriggered) {
+                    
+                    // 1. GAME LOGIC (Throttled - Controls Game Speed)
+                    long currentDelay = model.isSpeedBoostActive() ? speedNanos / 2 : speedNanos;
+                    
+                    if (now - lastUpdate >= currentDelay) {
+                        updateGame(); // Move characters, calculate collisions
+                        lastUpdate = now;
+                    }
+                    
+                    // 2. DRAWING (Unthrottled - Runs at full 60 FPS)
+                    // Moving this OUTSIDE the 'if' makes input feel instant!
+                    draw(); 
                 }
+                
+                // Floating text also needs smooth animation
+                drawFloatingText(gameCanvas.getGraphicsContext2D());
             }
-            drawFloatingText(gameCanvas.getGraphicsContext2D());
-        }
-    };
-    
-    // 2. Start it using the variable
-    gameTimer.start(); 
-}   
+        };
+        gameTimer.start(); 
+    } 
 
     private void updateGame() {
         // --- HORDE SPAWNER ---
-        // Keeps spawning enemies until the max limit for the level is reached
         if (activeEnemies.isEmpty() || activeEnemies.size() < getMaxEnemiesForLevel()) {
             spawnNextEnemy();
-            if (activeEnemies.isEmpty()) return; // Safety check
+            if (activeEnemies.isEmpty()) return; 
         }
 
         // --- DEATH CHECK ---
         if (player == null || !player.isAlive()) {
-            if (!gameOverTriggered) {
-                triggerGameOverSequence();
-            }
+            if (!gameOverTriggered) triggerGameOverSequence();
             return;
         }
 
-        // 1. Player Move
+        // ==========================================
+        // 1. PLAYER MOVEMENT & COLLISION
+        // ==========================================
         int nextX = player.getX();
         int nextY = player.getY();
 
@@ -189,26 +202,88 @@ private void startTaskTimer() {
         }
 
         if (currentDir != Direction.NONE) {
-            playerTrail.add(new int[]{nextX, nextY});
-            model.processMove(player, nextX, nextY);
+            
+            // A. FALLING OFF THE GRID (Instant Death)
+            if (nextX < 0 || nextX >= 40 || nextY < 0 || nextY >= 40) {
+                System.out.println("FATAL: Player fell off the Grid!");
+                SoundManager.playSound("fall.wav"); 
+                player.reduceLives(player.getLives()); 
+                triggerGameOverSequence();
+                return;
+            }
 
-            if (playerTrail.size() > MAX_TRAIL_LENGTH) {
-                int[] old = playerTrail.poll();
-                model.getGrid()[old[0]][old[1]] = 0; 
+            // B. WALL/OBSTACLE COLLISION (-0.5 Lives)
+            int nextCell = model.getGrid()[nextX][nextY];
+            
+            if (nextCell == 1 || nextCell == 2) {
+                SoundManager.playSound("crash.wav");
+                player.reduceLives(0.5); 
+                spawnFloatingText("-0.5 HP", player.getX(), player.getY(), Color.ORANGE);
+                currentDir = Direction.NONE; // Stop movement
+            } 
+            else {
+                // C. VALID MOVE
+                playerTrail.add(new int[]{nextX, nextY});
+                model.processMove(player, nextX, nextY);
+
+                if (playerTrail.size() > MAX_TRAIL_LENGTH) {
+                    int[] old = playerTrail.poll();
+                    model.getGrid()[old[0]][old[1]] = 0; 
+                }
             }
         }
 
-        // 2. Discs Logic
+        // ==========================================
+        // 2. DISC LOGIC
+        // ==========================================
         for (int i = 0; i < discs.size(); i++) {
             Disc d = discs.get(i);
-            d.update(); 
+            d.update(model.getGrid()); 
+
+            // A. MAGNETIC PICKUP
+            if (d.isStationary() && d.isActive()) {
+                if (d.getOwner() == player) {
+                    double dist = Math.abs(player.getX() - d.getX()) + Math.abs(player.getY() - d.getY());
+                    if (dist <= 1.5) { 
+                        SoundManager.playSound("pickup.wav");
+                        d.returnToOwner(); 
+                    }
+                }
+            }
+
+            // B. COLLISION
+            if (!d.isStationary() && d.isActive()) {
+                // Enemy Disc hits Player
+                if (d.getOwner() != player) {
+                    if (player.getX() == d.getX() && player.getY() == d.getY()) {
+                        SoundManager.playSound("hit.wav");
+                        player.reduceLives(1.0); 
+                        spawnFloatingText("-1 HP", player.getX(), player.getY(), Color.RED);
+                        d.returnToOwner(); 
+                    }
+                }
+                // Player Disc hits Enemy
+                if (d.getOwner() == player) {
+                    for (Enemy e : activeEnemies) {
+                        if (e.isAlive() && e.getX() == d.getX() && e.getY() == d.getY()) {
+                            SoundManager.playSound("hit.wav");
+                            e.reduceLives(1.0);
+                            spawnFloatingText("CRIT!", e.getX(), e.getY(), Color.RED);
+                            d.returnToOwner(); 
+                        }
+                    }
+                }
+            }
+
             if (!d.isActive()) {
                 discs.remove(i);
                 i--;
             }
         }
 
-        // 3. Enemy Logic
+        // ==========================================
+        // 3. ENEMY LOGIC
+        // ==========================================
         while (enemyTrails.size() < activeEnemies.size()) enemyTrails.add(new LinkedList<>());
 
         for (int i = 0; i < activeEnemies.size(); i++) {
@@ -217,18 +292,36 @@ private void startTaskTimer() {
             
             if (!e.isAlive()) {
                 handleEnemyDeath(e, i);
-                i--;
-                continue;
+                i--; continue;
+            }
+
+            // AI Shooting
+            if (e.canShoot()) {
+                boolean shoot = false;
+                int shotDir = -1;
+                if (e.getX() == player.getX()) {
+                    int dist = player.getY() - e.getY();
+                    if (dist > 0 && dist < 10) { shotDir = 1; shoot = true; }
+                    else if (dist < 0 && dist > -10) { shotDir = 0; shoot = true; }
+                }
+                else if (e.getY() == player.getY()) {
+                    int dist = player.getX() - e.getX();
+                    if (dist > 0 && dist < 10) { shotDir = 3; shoot = true; }
+                    else if (dist < 0 && dist > -10) { shotDir = 2; shoot = true; }
+                }
+
+                if (shoot) {
+                    e.useAmmo(); 
+                    discs.add(new Disc(e.getX(), e.getY(), shotDir, e));
+                }
             }
 
             // AI Movement
             int moveDir = e.makeMove(model.getGrid());
             int ex = e.getX();
             int ey = e.getY();
-            if (moveDir == 0) ey--;      
-            else if (moveDir == 1) ey++; 
-            else if (moveDir == 2) ex--; 
-            else if (moveDir == 3) ex++; 
+            if (moveDir == 0) ey--; else if (moveDir == 1) ey++; 
+            else if (moveDir == 2) ex--; else if (moveDir == 3) ex++; 
 
             eTrail.add(new int[]{ex, ey});
             model.processMove(e, ex, ey);
@@ -236,19 +329,6 @@ private void startTaskTimer() {
             if (eTrail.size() > MAX_TRAIL_LENGTH) {
                 int[] old = eTrail.poll();
                 model.getGrid()[old[0]][old[1]] = 0;
-            }
-
-            // --- HIT DETECTION ---
-            for (Disc d : discs) {
-                if (d.isActive() && d.getX() == e.getX() && d.getY() == e.getY()) {
-                    // SOUND: Play Hit Sound
-                    SoundManager.playSound("hit.wav");
-                    
-                    e.reduceLives(1.0); 
-                    d.deactivate();     
-                    spawnFloatingText("HIT!", e.getX(), e.getY(), Color.RED);
-                    showMessage("HIT! HP: " + (int)e.getLives());
-                }
             }
         }
     }
@@ -259,7 +339,13 @@ private void startTaskTimer() {
         gameStarted = false; 
         System.out.println("Player Died. Triggering Game Over Sequence.");
 
-        // SOUND: Stop Music and Play Game Over Sound
+        if (App.globalPlayer != null && App.globalPassword != null) {
+            System.out.println("Auto-Saving progress...");
+            App.globalPlayer.setLevel(player.getLevel());
+            App.globalPlayer.setXP(player.getXP());
+            DataManager.savePlayer(App.globalPlayer, App.globalPassword);
+        }
+
         SoundManager.stopMusic();
         SoundManager.playSound("gameover.wav");
 
@@ -274,72 +360,136 @@ private void startTaskTimer() {
         pause.play();
     }
 
-    // --- ENEMY DEATH & REWARDS ---
+    // --- ENEMY DEATH & VICTORY CHECK ---
     private void handleEnemyDeath(Enemy e, int index) {
         int oldLevel = player.getLevel();
-        player.addXP(e.getXPReward());
-        int newLevel = player.getLevel();
         
+        player.addXP(e.getXPReward()); 
         spawnFloatingText("+" + e.getXPReward() + " XP", player.getX(), player.getY(), Color.GOLD);
         showMessage("DEFEATED " + e.getName());
 
+        int newLevel = player.getLevel();
         if (newLevel > oldLevel) {
-            // Optional: Play Level Up Sound
             SoundManager.playSound("levelup.wav");
-            checkStoryProgression(newLevel);
+            
+            // --- 1. VICTORY CHECK (Level 99) ---
+            if (newLevel >= 99) {
+                triggerGameWinSequence();
+                return; // Stop further processing
+            }
+
+            // --- 2. Normal Story Check ---
+            boolean storyTriggered = checkStoryProgression(newLevel);
+            if (!storyTriggered && (newLevel == 20 || newLevel == 30)) {
+                triggerArenaUpgradeSequence(newLevel);
+            }
         }
 
-        activeEnemies.remove(index);
-        enemyTrails.remove(index);
+        // --- 3. CLEANUP (Erase Enemy Walls) ---
+        if (index < activeEnemies.size()) {
+            Queue<int[]> deadTrail = enemyTrails.get(index);
+            for (int[] pos : deadTrail) {
+                model.getGrid()[pos[0]][pos[1]] = 0; 
+            }
+            activeEnemies.remove(index);
+            enemyTrails.remove(index);
+        }
     }
 
-
-
-private void checkStoryProgression(int level) {
-    try {
-        String nextChapter = null;
-
-        // Based on your story.txt ranges:
-        if (level == 10)      nextChapter = "chapter2"; // RISING THREAT
-        else if (level == 19) nextChapter = "chapter3"; // RINZLER’S SHADOW
-        else if (level == 28) nextChapter = "chapter4"; // ISO REFUGE
-        else if (level == 37) nextChapter = "chapter5"; // GOLDEN EMPIRE
-        else if (level == 46) nextChapter = "chapter6"; // FRACTURE EXPANDS
-        else if (level == 55) nextChapter = "chapter7"; // CORE TRUTH
-        else if (level == 64) nextChapter = "chapter8"; // RINZLER REBORN
-        else if (level == 73) nextChapter = "chapter9"; // MASTER KEY PROTOCOL
-        else if (level == 82) nextChapter = "chapter10"; // FINAL CONVERGENCE
-
-        if (nextChapter != null) {
-            gameStarted = false;
-            
-            // Stop the game loop timer so it doesn't run in background
-            if (gameTimer != null) gameTimer.stop(); 
-            
-            App.goToCutscene(nextChapter);
+    // --- NEW: WIN SEQUENCE ---
+    private void triggerGameWinSequence() {
+        gameStarted = false;
+        if (gameTimer != null) gameTimer.stop();
+        
+        System.out.println("VICTORY REACHED! Level " + player.getLevel());
+        
+        // Choose ending based on Character
+        String endingChapter = "ending_hero"; // Default (Tron)
+        if (player.getName().equalsIgnoreCase("Kevin")) {
+            endingChapter = "ending_villain";
         }
-    } catch (Exception ex) { ex.printStackTrace(); }
-}
+        
+        final String finalChapter = endingChapter;
 
-    // --- SPAWN LOGIC (HORDE MODE) ---
+        showMessage("SYSTEM LIBERATED!");
+        SoundManager.stopMusic();
+        SoundManager.playSound("win.wav"); // Ensure you have this sound
+
+        PauseTransition pause = new PauseTransition(Duration.seconds(4));
+        pause.setOnFinished(ev -> {
+            try {
+                // Go to the specific ending cutscene
+                App.goToCutscene(finalChapter);
+            } catch (Exception ex) { ex.printStackTrace(); }
+        });
+        pause.play();
+    }
+
+    private void triggerArenaUpgradeSequence(int level) {
+        gameStarted = false; 
+        if (gameTimer != null) gameTimer.stop();
+        
+        showMessage("ARENA UPGRADE UNLOCKED!");
+        SoundManager.playSound("levelup.wav"); 
+
+        PauseTransition pause = new PauseTransition(Duration.seconds(2));
+        pause.setOnFinished(ev -> {
+            try {
+                App.setRoot("Arena"); 
+            } catch (Exception ex) { ex.printStackTrace(); }
+        });
+        pause.play();
+    }
+
+    private boolean checkStoryProgression(int level) {
+        try {
+            String nextChapter = null;
+            if (level == 10)      nextChapter = "chapter2"; 
+            else if (level == 19) nextChapter = "chapter3"; 
+            else if (level == 28) nextChapter = "chapter4"; 
+            else if (level == 37) nextChapter = "chapter5"; 
+            else if (level == 46) nextChapter = "chapter6"; 
+            else if (level == 55) nextChapter = "chapter7"; 
+            else if (level == 64) nextChapter = "chapter8"; 
+            else if (level == 73) nextChapter = "chapter9"; 
+            else if (level == 82) nextChapter = "chapter10"; 
+
+            if (nextChapter != null) {
+                gameStarted = false;
+                if (gameTimer != null) gameTimer.stop(); 
+                
+                // Save before cutscene
+                if (App.globalPlayer != null && App.globalPassword != null) {
+                    System.out.println("Story Event: Saving Progress...");
+                    App.globalPlayer.setLevel(player.getLevel());
+                    App.globalPlayer.setXP(player.getXP());
+                    DataManager.savePlayer(App.globalPlayer, App.globalPassword);
+                }
+
+                App.goToCutscene(nextChapter);
+                return true; 
+            }
+        } catch (Exception ex) { ex.printStackTrace(); }
+        return false; 
+    }
+
     private int getMaxEnemiesForLevel() {
         int pLevel = player.getLevel();
-        if (pLevel >= 20) return 3; // Chaos Mode
-        if (pLevel >= 5) return 2;  // Double Trouble
-        return 1;                   // Duel Mode
+        if (pLevel >= 20) return 3; 
+        if (pLevel >= 5) return 2;  
+        return 1;                   
     }
 
     private void spawnNextEnemy() {
-        // Stop if we have enough enemies
         if (activeEnemies.size() >= getMaxEnemiesForLevel()) return; 
 
         int playerLevel = player.getLevel();
         String targetName = "Koura"; 
 
-        if (playerLevel < 5) targetName = "Koura";       // Easy
-        else if (playerLevel < 10) targetName = "Sark";  // Medium
-        else if (playerLevel < 20) targetName = "Rinzler"; // Hard
-        else targetName = "Clu";                         // Impossible
+        if (playerLevel < 5) targetName = "Koura";       
+        else if (playerLevel < 10) targetName = "Sark";  
+        else if (playerLevel < 20) targetName = "Rinzler"; 
+        else targetName = "Clu";                        
 
         Enemy candidate = null;
         for (Enemy e : enemyPool) {
@@ -348,83 +498,62 @@ private void checkStoryProgression(int level) {
                 break;
             }
         }
-
-        // Fallbacks
         if (candidate == null && !enemyPool.isEmpty()) candidate = enemyPool.get(0); 
         if (candidate == null) candidate = new Enemy("Default Drone", "#FF0000", 3.0, 1.0, "Easy", 100, "Normal");
 
         if (candidate != null) {
-            // Buff enemies at high levels (> 30)
             double buffSpeed = (playerLevel > 30) ? 0.5 : 0.0;
             double buffLives = (playerLevel > 30) ? (playerLevel - 30) * 0.5 : 0.0;
 
-            // Create fresh copy
             Enemy spawned = new Enemy(candidate.getName(), candidate.getColor(), 
                                       candidate.getLives() + buffLives, 
                                       candidate.getSpeed() + buffSpeed, 
                                       "Normal", candidate.getXPReward(), "Normal");
             
-            // Randomize spawn position (Range 5-35)
             int sx = 5 + (int)(Math.random() * 30);
             int sy = 5 + (int)(Math.random() * 30);
-            
-            // Prevent spawning on player
             if (Math.abs(sx - player.getX()) < 5) sx = 35;
 
             spawned.setPosition(sx, sy); 
             activeEnemies.add(spawned);
-            
-            // Only announce new waves
-            if (activeEnemies.size() == 1) {
-                showMessage("WAVE INCOMING: " + spawned.getName());
-            }
+            if (activeEnemies.size() == 1) showMessage("WAVE INCOMING: " + spawned.getName());
         }
     }
 
-@FXML
+    @FXML
     public void handleKeyPress(KeyEvent event) {
         if (!gameStarted || gameOverTriggered) return; 
-        if (activeEnemies.isEmpty()) return;
-
-        // 1. Shooting (Spacebar)
+        
         if (event.getCode() == KeyCode.SPACE) {
-            SoundManager.playSound("shoot.wav");
-            discs.add(new Disc(player.getX(), player.getY(), lastFacingDir));
+            if (player.hasAmmo()) { 
+                SoundManager.playSound("shoot.wav");
+                player.useAmmo();   
+                discs.add(new Disc(player.getX(), player.getY(), lastFacingDir, player));
+            } else {
+                System.out.println("NO DISC AMMO!"); 
+            }
             return;
         }
 
-        // 2. Movement & Cheats
         switch (event.getCode()) {
-            // Movement Keys
-            case W: 
-                if (currentDir != Direction.DOWN) currentDir = Direction.UP; 
-                break;
-            case S: 
-                if (currentDir != Direction.UP)   currentDir = Direction.DOWN; 
-                break;
-            case A: 
-                if (currentDir != Direction.RIGHT) currentDir = Direction.LEFT; 
-                break;
-            case D: 
-                if (currentDir != Direction.LEFT)  currentDir = Direction.RIGHT; 
-                break;
+            case W: if (currentDir != Direction.DOWN) currentDir = Direction.UP; break;
+            case S: if (currentDir != Direction.UP)   currentDir = Direction.DOWN; break;
+            case A: if (currentDir != Direction.RIGHT) currentDir = Direction.LEFT; break;
+            case D: if (currentDir != Direction.LEFT)  currentDir = Direction.RIGHT; break;
 
-            // --- CHEAT CODE (Must be inside the switch) ---
-            case L: 
-                // CHEAT: Gives 100 XP to force a Level Up immediately
-                player.addXP(100); 
+            case L: // CHEAT
+                int oldCheatLevel = player.getLevel();
+                player.addXP(5000); 
                 System.out.println("CHEAT: Level is now " + player.getLevel());
-                
-                // Manually trigger the check to see if a cutscene should happen
-                checkStoryProgression(player.getLevel()); 
+                if (player.getLevel() > oldCheatLevel) {
+                    if (player.getLevel() >= 99) triggerGameWinSequence(); 
+                    else checkStoryProgression(player.getLevel()); 
+                }
                 break;
-
-            default: 
-                break;
+            default: break;
         }
     }
 
-    // --- DRAWING ---
     private void draw() {
         GraphicsContext gc = gameCanvas.getGraphicsContext2D();
         gc.setFill(Color.BLACK);
@@ -433,9 +562,16 @@ private void checkStoryProgression(int level) {
         int[][] grid = model.getGrid();
         for (int x = 0; x < 40; x++) {
             for (int y = 0; y < 40; y++) {
-                if (grid[x][y] == 1) { gc.setFill(Color.web("#333333")); gc.fillRect(x*CELL, y*CELL, CELL-1, CELL-1); } 
-                else if (grid[x][y] == 2) { gc.setFill(Color.web("#00FFFF", 0.6)); gc.fillRect(x*CELL, y*CELL, CELL-1, CELL-1); } 
-                else if (grid[x][y] == 3) { gc.setFill(Color.YELLOW); gc.fillRect(x*CELL, y*CELL, CELL-1, CELL-1); }
+                if (grid[x][y] == 1) { 
+                    gc.setFill(Color.web("#333333")); 
+                    gc.fillRect(x*CELL, y*CELL, CELL-1, CELL-1); 
+                } 
+                else if (grid[x][y] == 2) { 
+                    gc.setFill(Color.web("#00FFFF", 0.3)); // Glow
+                    gc.fillRect(x*CELL - 2, y*CELL - 2, CELL+4, CELL+4);
+                    gc.setFill(Color.web("#00FFFF")); 
+                    gc.fillRect(x*CELL, y*CELL, CELL-1, CELL-1); 
+                } 
             }
         }
 
@@ -466,8 +602,9 @@ private void checkStoryProgression(int level) {
         
         if (player != null) {
             double displayLives = Math.max(0, player.getLives());
-            String stats = String.format("TRON | LVL: %d | XP: %d | LIVES: %.0f", 
-                                         player.getLevel(), player.getXP(), displayLives);
+            String ammoStr = "DISC: " + player.getCurrentAmmo() + "/" + player.getMaxAmmo();
+            String stats = String.format("TRON | LVL: %d | XP: %d | LIVES: %.1f | %s", 
+                                         player.getLevel(), player.getXP(), displayLives, ammoStr);
             gc.fillText(stats, 20, 27);
         }
 
@@ -514,15 +651,12 @@ private void checkStoryProgression(int level) {
                 if (line.trim().isEmpty()) continue;
                 String[] data = line.split(",");
                 if (data.length >= 6) {
-                    // Quick Parse: Name, Color, Diff, XP, Speed, Intel
                     String name = data[0].trim();
-                    String color = "#FF0000"; // Default
+                    String color = "#FF0000"; 
                     if (data[1].trim().equalsIgnoreCase("Gold")) color = "#FFD700";
                     else if (data[1].trim().equalsIgnoreCase("Green")) color = "#00FF00";
-                    
                     int xp = Integer.parseInt(data[3].trim());
                     double speed = Double.parseDouble(data[4].trim());
-                    
                     enemyPool.add(new Enemy(name, color, 3.0, speed, data[2].trim(), xp, data[5].trim()));
                 }
             }

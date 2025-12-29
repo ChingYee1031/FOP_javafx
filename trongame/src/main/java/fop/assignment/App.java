@@ -9,12 +9,13 @@ import javafx.scene.Scene;
 import javafx.stage.Stage;
 
 public class App extends Application {
-    public static Character chosenCharacter;
+
     private static Scene scene;
     
     // --- GLOBAL STATE (Saves progress between screens) ---
     public static Player globalPlayer; 
     public static CharacterSelection globalSelectedCharacter;
+    public static String globalPassword;
     
     // Tracks which chapter to show next (Default: chapter1)
     public static String currentChapterId = "chapter1"; 
@@ -29,6 +30,14 @@ public class App extends Application {
 
     public static void setRoot(String fxml) throws IOException {
         scene.setRoot(loadFXML(fxml));
+        
+        // --- NEW: AUTO-RESIZE WINDOW ---
+        // This gets the window (Stage) and tells it to snap to the new content's size
+        if (scene.getWindow() != null) {
+            Stage stage = (Stage) scene.getWindow();
+            stage.sizeToScene(); 
+            stage.centerOnScreen(); // Optional: Keeps the window centered
+        }
     }
 
     // NEW: Helper to switch to a specific cutscene

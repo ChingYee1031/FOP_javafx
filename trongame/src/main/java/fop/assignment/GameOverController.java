@@ -12,11 +12,13 @@ public class GameOverController {
         System.out.println("Game Over Screen Loaded.");
     }
 
-    @FXML
+@FXML
     private void handleReturnToMenu() throws IOException {
-        System.out.println("Returning to Menu...");
-        // We don't reset App.globalPlayer here so they keep their name/level
-        // if they want to try again immediately.
+        // Auto-Save progress
+        if (App.globalPlayer != null && App.globalPassword != null) {
+            DataManager.savePlayer(App.globalPlayer, App.globalPassword);
+            System.out.println("Progress Saved.");
+        }
         App.setRoot("MenuPage");
     }
 

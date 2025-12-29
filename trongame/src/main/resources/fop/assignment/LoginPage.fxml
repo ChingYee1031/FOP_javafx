@@ -3,36 +3,65 @@
 <?import javafx.geometry.Insets?>
 <?import javafx.scene.control.Button?>
 <?import javafx.scene.control.Label?>
+<?import javafx.scene.control.PasswordField?>
 <?import javafx.scene.control.TextField?>
 <?import javafx.scene.image.Image?>
 <?import javafx.scene.image.ImageView?>
 <?import javafx.scene.layout.StackPane?>
+<?import javafx.scene.layout.VBox?>
 <?import javafx.scene.text.Font?>
 
-<StackPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="400.0" prefWidth="600.0" xmlns="http://javafx.com/javafx/25" xmlns:fx="http://javafx.com/fxml/1" fx:controller="fop.assignment.LoginPage">
+<StackPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="400.0" prefWidth="600.0" xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1" fx:controller="fop.assignment.LoginPage">
    <children>
       <ImageView fitHeight="480.0" fitWidth="640.0" focusTraversable="true" pickOnBounds="true" StackPane.alignment="CENTER">
          <image>
             <Image url="@tron_background.png" />
          </image>
       </ImageView>
-      <Label text="ENTER USERNAME" textFill="WHITE" StackPane.alignment="CENTER">
-         <font>
-            <Font name="Arial" size="20.0" />
-         </font>
-         <StackPane.margin>
-            <Insets />
-         </StackPane.margin>
-      </Label>
-      <TextField fx:id="nameInput" maxWidth="200.0" prefHeight="25.0" prefWidth="521.0" StackPane.alignment="CENTER">
-         <StackPane.margin>
-            <Insets top="50.0" />
-         </StackPane.margin>
-      </TextField>
-      <Button fx:id="loginButton" mnemonicParsing="false" onAction="#handleLogin" text="DONE" StackPane.alignment="CENTER">
-         <StackPane.margin>
-            <Insets top="110.0" />
-         </StackPane.margin>
-      </Button>
+
+      <VBox alignment="CENTER" maxHeight="-Infinity" maxWidth="-Infinity" prefHeight="300.0" prefWidth="300.0" spacing="10.0" style="-fx-background-color: rgba(0,0,0,0.7); -fx-background-radius: 15; -fx-padding: 20;">
+         <children>
+            <Label text="TRON ACCESS PORT" textFill="#00ffff">
+               <font>
+                  <Font name="Impact" size="24.0" />
+               </font>
+               <VBox.margin>
+                  <Insets bottom="10.0" />
+               </VBox.margin>
+            </Label>
+
+            <Label text="USERNAME" textFill="WHITE">
+               <font>
+                  <Font name="Arial Bold" size="12.0" />
+               </font>
+            </Label>
+            <TextField fx:id="nameInput" maxWidth="200.0" promptText="Enter Codename" />
+
+            <Label text="PASSWORD" textFill="WHITE">
+               <font>
+                  <Font name="Arial Bold" size="12.0" />
+               </font>
+               <VBox.margin>
+                  <Insets top="5.0" />
+               </VBox.margin>
+            </Label>
+            <PasswordField fx:id="passInput" maxWidth="200.0" promptText="Secure Access Key" />
+
+            <Label fx:id="errorLabel" textFill="#ff4444" wrapText="true">
+               <font>
+                  <Font size="11.0" />
+               </font>
+            </Label>
+
+            <Button fx:id="loginButton" mnemonicParsing="false" onAction="#handleLogin" style="-fx-background-color: #00ffff; -fx-cursor: hand;" text="INITIALIZE" textFill="#0a0a0a">
+               <font>
+                  <Font name="System Bold" size="14.0" />
+               </font>
+               <VBox.margin>
+                  <Insets top="15.0" />
+               </VBox.margin>
+            </Button>
+         </children>
+      </VBox>
    </children>
 </StackPane>

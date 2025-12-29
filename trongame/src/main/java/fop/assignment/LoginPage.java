@@ -3,38 +3,45 @@ package fop.assignment;
 import java.io.IOException;
 
 import javafx.fxml.FXML;
-import javafx.scene.control.Button;
+import javafx.scene.control.Label;
+import javafx.scene.control.PasswordField;
 import javafx.scene.control.TextField;
 
 public class LoginPage {
     
-    @FXML
-    private TextField nameInput;
-
-    @FXML
-    private Button loginButton;
+    @FXML private TextField nameInput;
+    @FXML private PasswordField passInput; // NEW
+    @FXML private Label errorLabel; // NEW
 
     @FXML
     private void handleLogin() throws IOException {
-        String input = nameInput.getText();
+        String username = nameInput.getText().trim();
+        String password = passInput.getText().trim();
 
-        // 1. Validation
-        if (input == null || input.trim().isEmpty()) {
-            System.out.println("Error: Name cannot be empty!");
-            return; 
+        if (username.isEmpty() || password.isEmpty()) {
+            errorLabel.setText("System Error: Inputs cannot be empty.");
+            return;
         }
 
-        // 2. FIX: Create the Player Object immediately
-        // We initialize them with default "Tron" stats (Blue, 3 lives, 1.5 speed)
-        // (If they pick a different character later, we can update these stats then)
-        Player newPlayer = new Player(input, "#00FFFF", 3.0, 1.5);
+        // 1. Attempt Login
+        Player loadedPlayer = DataManager.login(username, password);
 
-        // 3. FIX: Save to the new 'globalPlayer' variable instead of 'currentPlayerName'
-        App.globalPlayer = newPlayer; 
-        System.out.println("Welcome, " + newPlayer.getName());
+        if (loadedPlayer != null) {
+            // LOGIN SUCCESS
+            App.globalPlayer = loadedPlayer;
+            App.globalPassword = password; 
+            System.out.println("User Recognized. Level: " + loadedPlayer.getLevel());
+        } else {
+            // LOGIN FAILED -> REGISTER NEW USER
+            // Note: In a real app, you'd check if the username exists first.
+            App.globalPlayer = new Player(username, "#00FFFF", 3.0, 1.5);
+            App.globalPassword = password;
+            
+            // Save immediately to register them
+            DataManager.savePlayer(App.globalPlayer, password);
+            System.out.println("New User Identity Created.");
+        }
 
-        // 4. Move to next page
-        // Note: If you want to start the Story immediately, change "MenuPage" to "CutscenePage"
-        App.setRoot("MenuPage"); 
+        App.setRoot("MenuPage");
     }
 }
