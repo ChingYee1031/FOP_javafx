@@ -9,7 +9,7 @@ import javafx.scene.Scene;
 import javafx.stage.Stage;
 
 public class App extends Application {
-
+    public static Character chosenCharacter;
     private static Scene scene;
     
     // --- GLOBAL STATE (Saves progress between screens) ---

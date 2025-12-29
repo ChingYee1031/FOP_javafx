@@ -6,32 +6,18 @@
 <?import javafx.scene.layout.AnchorPane?>
 <?import javafx.scene.layout.VBox?>
 
-<AnchorPane fx:id="handleKeyPress" onKeyPressed="#handleKeyPress" xmlns="http://javafx.com/javafx/13" xmlns:fx="http://javafx.com/fxml/1" fx:controller="fop.assignment.ArenaController">
+<AnchorPane onKeyPressed="#handleKeyPress" xmlns="http://javafx.com/javafx/25" xmlns:fx="http://javafx.com/fxml/1" fx:controller="fop.assignment.ArenaController">
    <children>
       <Canvas fx:id="gameCanvas" height="600.0" mouseTransparent="true" pickOnBounds="true" width="600.0" />
-      <VBox fx:id="characterMenu" alignment="CENTER" layoutX="194.0" layoutY="191.0" prefHeight="200.0" prefWidth="100.0" />
-      <VBox fx:id="arenaMenu" alignment="CENTER" layoutX="285.0" layoutY="190.0" prefHeight="201.0" prefWidth="24.0" visible="false">
+      
+      <VBox fx:id="characterMenu" alignment="CENTER" layoutX="194.0" layoutY="191.0" prefHeight="200.0" prefWidth="100.0" visible="false" />
+
+      <VBox fx:id="arenaMenu" alignment="CENTER" layoutX="200.0" layoutY="150.0" prefHeight="300.0" prefWidth="200.0" spacing="10.0" visible="true">
          <children>
-            <ButtonBar prefHeight="40.0" prefWidth="200.0">
-              <buttons>
-                <Button alignment="CENTER" contentDisplay="CENTER" mnemonicParsing="false" onAction="#loadArena1Action" text="ARENA 1" />
-              </buttons>
-            </ButtonBar>
-            <ButtonBar prefHeight="40.0" prefWidth="200.0">
-              <buttons>
-                <Button alignment="CENTER" contentDisplay="CENTER" mnemonicParsing="false" onAction="#loadArena2Action" text="ARENA 2" />
-              </buttons>
-            </ButtonBar>
-            <ButtonBar prefHeight="40.0" prefWidth="200.0">
-              <buttons>
-                <Button alignment="CENTER" contentDisplay="CENTER" mnemonicParsing="false" onAction="#loadArena3Action" text="ARENA 3" />
-              </buttons>
-            </ButtonBar>
-            <ButtonBar prefHeight="40.0" prefWidth="200.0">
-              <buttons>
-                <Button alignment="CENTER" contentDisplay="CENTER" mnemonicParsing="false" onAction="#loadRandomArenaAction" text="RANDOM" />
-              </buttons>
-            </ButtonBar>
+            <Button mnemonicParsing="false" onAction="#loadArena1Action" prefWidth="150.0" text="ARENA 1" />
+            <Button mnemonicParsing="false" onAction="#loadArena2Action" prefWidth="150.0" text="ARENA 2" />
+            <Button mnemonicParsing="false" onAction="#loadArena3Action" prefWidth="150.0" text="ARENA 3" />
+            <Button mnemonicParsing="false" onAction="#loadRandomArenaAction" prefWidth="150.0" text="RANDOM ARENA" />
          </children>
       </VBox>
    </children>

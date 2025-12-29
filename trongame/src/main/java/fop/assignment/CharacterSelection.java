@@ -1,6 +1,5 @@
 package fop.assignment;
 
-import java.io.File;
 import java.io.IOException;
 import java.util.Scanner;
 
@@ -8,6 +7,10 @@ import javafx.fxml.FXML;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 
+/**
+ * UI Controller for the Character Selection Screen.
+ * Its job is to display stats and tell the App which character was picked.
+ */
 public class CharacterSelection {
 
     @FXML private Label tronSpeedLabel;
@@ -93,6 +96,10 @@ public class CharacterSelection {
         }
     }
 
+
+    /**
+     * Switch to the game arena.
+     */
     private void startGame() throws IOException {
         App.setRoot("Arena");
     }
