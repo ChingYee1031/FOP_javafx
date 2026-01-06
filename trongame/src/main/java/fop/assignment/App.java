@@ -23,7 +23,7 @@ public class App extends Application {
     @Override
     public void start(Stage stage) throws IOException {
         // Start at the Character Selection or Start Page
-        scene = new Scene(loadFXML("StartPage"), 800, 600); // 800x600 for better view
+        scene = new Scene(loadFXML("StartPage"), 1280, 720); // 800x600 for better view
         stage.setScene(scene);
         stage.show();
     }
