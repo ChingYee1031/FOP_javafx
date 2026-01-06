@@ -34,6 +34,9 @@ public class ArenaController {
     private ArrayList<Enemy> activeEnemies = new ArrayList<>();
     private ArrayList<Enemy> enemyPool = new ArrayList<>();
     private ArrayList<Disc> discs = new ArrayList<>();
+    
+    // Input Buffering (Fix for "Ghost Input")
+    private Direction bufferedDir = Direction.NONE;
 
     // --- TRAIL DECAY SYSTEM ---
     private Queue<int[]> playerTrail = new LinkedList<>();
@@ -56,7 +59,9 @@ public class ArenaController {
     private int lastFacingDir = 0; 
 
     private long lastUpdate = 0;
-    private long speedNanos = 80_000_000; 
+    
+    // SLOWED DOWN SPEED (0.15s per frame)
+    private long speedNanos = 150_000_000;
     
     // --- STATE FLAGS ---
     private boolean gameStarted = false;
@@ -66,7 +71,7 @@ public class ArenaController {
     private String gameMessage = ""; 
     private long messageTimer = 0;
 
-@FXML
+    @FXML
     public void initialize() {
         gameCanvas.setWidth(40 * CELL);
         gameCanvas.setHeight(40 * CELL);
@@ -93,7 +98,7 @@ public class ArenaController {
         gameStarted = true; 
         SoundManager.playMusic("bgm.mp3");
 
-        // --- THE FIX IS HERE ---
+        // --- INPUT FIX (STEAL FOCUS) ---
         gameCanvas.setFocusTraversable(true);
         
         // We wait for the scene to be ready, then we "Steal" the key listener back
@@ -130,7 +135,7 @@ public class ArenaController {
                 }
             }
         }
-        // Move enemies away from spawn
+        // Move enemies away from spawn (Legacy check, safer spawn logic is in spawnNextEnemy now)
         for (Enemy e : activeEnemies) {
             if (Math.abs(e.getX() - startX) < 5 && Math.abs(e.getY() - startY) < 5) {
                 e.setPosition(5, 5); 
@@ -147,7 +152,6 @@ public class ArenaController {
     }
 
     // --- GAME LOOP ---
-
     private void startTaskTimer() {
         gameTimer = new AnimationTimer() {
             @Override
@@ -163,7 +167,6 @@ public class ArenaController {
                     }
                     
                     // 2. DRAWING (Unthrottled - Runs at full 60 FPS)
-                    // Moving this OUTSIDE the 'if' makes input feel instant!
                     draw(); 
                 }
                 
@@ -172,9 +175,16 @@ public class ArenaController {
             }
         };
         gameTimer.start(); 
-    } 
+    }   
 
     private void updateGame() {
+        // --- INPUT BUFFER APPLICATION ---
+        // Applies the next move direction just before we calculate movement
+        if (bufferedDir != Direction.NONE) {
+            currentDir = bufferedDir;
+            bufferedDir = Direction.NONE; 
+        }
+
         // --- HORDE SPAWNER ---
         if (activeEnemies.isEmpty() || activeEnemies.size() < getMaxEnemiesForLevel()) {
             spawnNextEnemy();
@@ -372,6 +382,15 @@ public class ArenaController {
         if (newLevel > oldLevel) {
             SoundManager.playSound("levelup.wav");
             
+            // --- AUTO-SAVE ON LEVEL UP (Leaderboard Fix) ---
+            if (App.globalPlayer != null) {
+                App.globalPlayer.setLevel(newLevel);
+                App.globalPlayer.setXP(player.getXP());
+                DataManager.savePlayer(App.globalPlayer, App.globalPassword);
+                System.out.println("Level Up! Progress Auto-Saved.");
+            }
+            // -----------------------------------------------
+
             // --- 1. VICTORY CHECK (Level 99) ---
             if (newLevel >= 99) {
                 triggerGameWinSequence();
@@ -413,7 +432,7 @@ public class ArenaController {
 
         showMessage("SYSTEM LIBERATED!");
         SoundManager.stopMusic();
-        SoundManager.playSound("win.wav"); // Ensure you have this sound
+        SoundManager.playSound("win.wav"); 
 
         PauseTransition pause = new PauseTransition(Duration.seconds(4));
         pause.setOnFinished(ev -> {
@@ -510,9 +529,18 @@ public class ArenaController {
                                       candidate.getSpeed() + buffSpeed, 
                                       "Normal", candidate.getXPReward(), "Normal");
             
-            int sx = 5 + (int)(Math.random() * 30);
-            int sy = 5 + (int)(Math.random() * 30);
-            if (Math.abs(sx - player.getX()) < 5) sx = 35;
+            // --- UPDATED SPAWN LOGIC (SAFETY LOOP) ---
+            int sx, sy;
+            int attempts = 0;
+            
+            do {
+                sx = 1 + (int)(Math.random() * 38); 
+                sy = 1 + (int)(Math.random() * 38);
+                attempts++;
+            } while (attempts < 100 && (
+                     model.getGrid()[sx][sy] != 0 || 
+                     (Math.abs(sx - player.getX()) < 8 && Math.abs(sy - player.getY()) < 8)
+            ));
 
             spawned.setPosition(sx, sy); 
             activeEnemies.add(spawned);
@@ -536,11 +564,12 @@ public class ArenaController {
         }
 
         switch (event.getCode()) {
-            case W: if (currentDir != Direction.DOWN) currentDir = Direction.UP; break;
-            case S: if (currentDir != Direction.UP)   currentDir = Direction.DOWN; break;
-            case A: if (currentDir != Direction.RIGHT) currentDir = Direction.LEFT; break;
-            case D: if (currentDir != Direction.LEFT)  currentDir = Direction.RIGHT; break;
-
+            // --- UPDATED MOVEMENT (Saves to BUFFER) ---
+            case W: if (currentDir != Direction.DOWN) bufferedDir = Direction.UP; break;
+            case S: if (currentDir != Direction.UP)   bufferedDir = Direction.DOWN; break;
+            case A: if (currentDir != Direction.RIGHT) bufferedDir = Direction.LEFT; break;
+            case D: if (currentDir != Direction.LEFT)  bufferedDir = Direction.RIGHT; break;
+            
             case L: // CHEAT
                 int oldCheatLevel = player.getLevel();
                 player.addXP(5000); 
