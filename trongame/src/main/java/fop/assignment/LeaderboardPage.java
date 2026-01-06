@@ -19,7 +19,7 @@ public class LeaderboardPage {
 
     @FXML
     public void initialize() {
-        // 1. Setup Columns
+        // 1. Setup Columns (Must match getters in PlayerScore.java)
         nameColumn.setCellValueFactory(new PropertyValueFactory<>("name"));
         levelColumn.setCellValueFactory(new PropertyValueFactory<>("level"));
         scoreColumn.setCellValueFactory(new PropertyValueFactory<>("score"));
@@ -40,7 +40,19 @@ public class LeaderboardPage {
     }
 
     @FXML
-    private void handleBack() throws IOException {
-        App.setRoot("MenuPage");
+    private void handleBack() {
+        try {
+            // --- FIX: SMART NAVIGATION ---
+            // If a player is logged in, go back to Character Selection (so they don't have to login again).
+            // If no one is logged in (Guest), go back to the Start Page (Title Screen).
+            if (App.globalPlayer != null) {
+                App.setRoot("CharacterSelection"); 
+            } else {
+                App.setRoot("StartPage"); // Changed from "MenuPage" to "StartPage"
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+            System.out.println("ERROR: Could not load the previous screen.");
+        }
     }
 }

@@ -13,7 +13,7 @@ public class Disc {
     private int startX, startY;
     private boolean isStationary = false; // False = Flying, True = On Ground
     private long landTime = 0;
-    private static final long COOLDOWN_NANOS = 3_000_000_000L; // 5 Seconds
+    private static final long COOLDOWN_NANOS = 3_000_000_000L; // 3 Seconds (Adjusted from 5)
     
     public Disc(int x, int y, int dir, GameCharacter owner) {
         this.x = x;
@@ -29,7 +29,6 @@ public class Disc {
 
         // 1. STATIONARY LOGIC (Waiting on ground)
         if (isStationary) {
-            // Check 5-second cooldown
             if (System.nanoTime() - landTime > COOLDOWN_NANOS) {
                 returnToOwner(); // Time's up! Return automatically.
             }
@@ -55,8 +54,11 @@ public class Disc {
         }
 
         // Wall Collision Check
-        if (nextX < 0 || nextX >= 40 || nextY < 0 || nextY >= 40 || grid[nextX][nextY] == 1) {
-            land(); // Hit a wall, stop here
+        // FIX: Check for Wall (1) AND Trail (2)
+        if (nextX < 0 || nextX >= 40 || nextY < 0 || nextY >= 40 || 
+            grid[nextX][nextY] == 1 || grid[nextX][nextY] == 2) {
+            
+            land(); // Hit a wall or trail, stop here
         } else {
             // Move
             x = nextX;
