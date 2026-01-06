@@ -21,7 +21,7 @@ public class CharacterSelection {
     @FXML private Label kevinSpeedLabel;
     @FXML private Label kevinNameLabel;
     @FXML private Button selectKevinButton;
-    @FXML private Label lockMessage; // Ensure you have a Label in SceneBuilder for this
+    @FXML private Label lockMessage; 
 
     protected double speed, lives;
     protected String color;
@@ -69,65 +69,40 @@ public class CharacterSelection {
         } catch (Exception e) { e.printStackTrace(); }
     }
 
-@FXML
+    @FXML
     private void handleSelectTron() throws IOException {
         System.out.println("Tron Selected");
 
-        // FIX: Check if we already have a logged-in player
         if (App.globalPlayer != null) {
-            // WE HAVE A SAVE FILE!
-            // Don't create a new object. Just update the "skin" (Name/Color)
-            // This PRESERVES your Level and XP.
-            App.globalPlayer.setName("Tron");
+            // FIX: DO NOT overwrite the Name. Only update visuals.
             App.globalPlayer.setColor("#0091ffff"); 
-            // Optional: Update stats if Tron has specific stats
+            // Tron Speed logic
             App.globalPlayer.setSpeed(1.5); 
-            // DO NOT reset Level or XP here
         } else {
-            // NO SAVE FILE (Guest Mode)
-            // Create a fresh player
+            // Guest Mode (No Save) - OK to set name here
             App.globalPlayer = new Player("Tron", "#0091ffff", 3.0, 1.5);
         }
 
-        // Start the game
         startGame();
     }
 
-@FXML
+    @FXML
     private void handleSelectKevin() throws IOException {
         System.out.println("Kevin Selected");
 
-        // 1. Check if we have a saved game loaded
         if (App.globalPlayer != null) {
-            // UPDATE EXISTING PLAYER (Keep Level/XP)
-            App.globalPlayer.setName("Kevin");
-            App.globalPlayer.setColor("#ffffffff"); // Orange Color for Kevin
+             // FIX: DO NOT overwrite the Name. Only update visuals.
+            App.globalPlayer.setColor("#ffffffff"); 
             
-            // Kevin has slightly different stats (e.g., slower but maybe better handling logic later)
+            // Kevin has slightly different stats
             App.globalPlayer.setSpeed(1.5); 
         } else {
-            // NEW GAME (No save file)
+            // Guest Mode (No Save)
             App.globalPlayer = new Player("Kevin", "#ffffffff", 3.0, 1.5);
         }
 
-        // 2. Start Game
         startGame();
     }
-
-    private void updateGlobalCharacter(String name) {
-        // We update the EXISTING global player instead of making a new one
-        // This preserves the Level and XP
-        if (App.globalPlayer != null) {
-            // Update visuals only
-            if (name.equals("Kevin")) {
-                App.globalPlayer.setColor("#FFFFFF"); // White for Kevin
-                // App.globalPlayer.setSpeed(2.5); // Optional speed boost
-            } else {
-                App.globalPlayer.setColor("#00FFFF"); // Blue for Tron
-            }
-        }
-    }
-
 
     /**
      * Switch to the game arena.

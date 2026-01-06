@@ -10,8 +10,8 @@ import javafx.scene.control.TextField;
 public class LoginPage {
     
     @FXML private TextField nameInput;
-    @FXML private PasswordField passInput; // NEW
-    @FXML private Label errorLabel; // NEW
+    @FXML private PasswordField passInput; 
+    @FXML private Label errorLabel; 
 
     @FXML
     private void handleLogin() throws IOException {
@@ -20,6 +20,12 @@ public class LoginPage {
 
         if (username.isEmpty() || password.isEmpty()) {
             errorLabel.setText("System Error: Inputs cannot be empty.");
+            return;
+        }
+
+        // --- FIX: Prevent CSV Corruption ---
+        if (username.contains(",") || password.contains(",")) {
+            errorLabel.setText("Error: Fields cannot contain commas (',').");
             return;
         }
 
@@ -33,7 +39,6 @@ public class LoginPage {
             System.out.println("User Recognized. Level: " + loadedPlayer.getLevel());
         } else {
             // LOGIN FAILED -> REGISTER NEW USER
-            // Note: In a real app, you'd check if the username exists first.
             App.globalPlayer = new Player(username, "#00FFFF", 3.0, 1.5);
             App.globalPassword = password;
             

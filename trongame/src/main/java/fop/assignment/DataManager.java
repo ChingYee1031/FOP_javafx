@@ -1,8 +1,13 @@
 package fop.assignment;
 
-import java.io.*;
+import java.io.BufferedReader;
+import java.io.FileReader;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.PrintWriter;
 import java.time.LocalDate;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
 
 public class DataManager {
 
@@ -17,9 +22,13 @@ public class DataManager {
         try (BufferedReader br = new BufferedReader(new FileReader(FILE_PATH))) {
             String line;
             while ((line = br.readLine()) != null) {
+                // FIX: Skip empty lines to keep file clean
+                if (line.trim().isEmpty()) continue;
+
                 String[] parts = line.split(",");
+                
                 // If username matches, update their data
-                if (parts[0].equals(player.getName())) {
+                if (parts.length > 0 && parts[0].equals(player.getName())) {
                     String updatedLine = String.format("%s,%s,%d,%d,%d,%s",
                             player.getName(),
                             password, 
@@ -58,19 +67,31 @@ public class DataManager {
         try (BufferedReader br = new BufferedReader(new FileReader(FILE_PATH))) {
             String line;
             while ((line = br.readLine()) != null) {
+                
+                // FIX: Skip empty lines to prevent crashes
+                if (line.trim().isEmpty()) continue; 
+
                 String[] parts = line.split(",");
                 
+                // FIX: Ensure the line has enough data before parsing
+                if (parts.length < 4) continue; 
+                
                 // Check if Username AND Password match
-                if (parts.length >= 4 && parts[0].equals(username) && parts[1].equals(password)) {
-                    int level = Integer.parseInt(parts[2]);
-                    int xp = Integer.parseInt(parts[3]);
-                    
-                    // Load the saved stats into a new Player object
-                    Player p = new Player(username, "#00FFFF", 3.0, 1.5);
-                    p.setLevel(level); 
-                    p.setXP(xp);       
-                    
-                    return p;
+                if (parts[0].equals(username) && parts[1].equals(password)) {
+                    try {
+                        int level = Integer.parseInt(parts[2]);
+                        int xp = Integer.parseInt(parts[3]);
+                        
+                        // Load the saved stats into a new Player object
+                        // Default to Tron visuals, CharacterSelection will update color/speed later
+                        Player p = new Player(username, "#00FFFF", 3.0, 1.5);
+                        p.setLevel(level); 
+                        p.setXP(xp);       
+                        
+                        return p;
+                    } catch (NumberFormatException e) {
+                        System.out.println("Error parsing user data for: " + username);
+                    }
                 }
             }
         } catch (IOException e) {
@@ -86,9 +107,20 @@ public class DataManager {
         try (BufferedReader br = new BufferedReader(new FileReader(FILE_PATH))) {
             String line;
             while ((line = br.readLine()) != null) {
+                
+                // FIX: Skip empty lines
+                if (line.trim().isEmpty()) continue;
+
                 String[] parts = line.split(",");
+                
+                // FIX: Ensure complete data row
                 if (parts.length >= 6) {
-                    scores.add(new PlayerScore(parts[0], Integer.parseInt(parts[2]), Integer.parseInt(parts[4]), parts[5]));
+                    try {
+                        scores.add(new PlayerScore(parts[0], Integer.parseInt(parts[2]), Integer.parseInt(parts[4]), parts[5]));
+                    } catch (NumberFormatException e) {
+                        // Skip corrupted lines
+                        continue; 
+                    }
                 }
             }
         } catch (IOException e) { e.printStackTrace(); }
