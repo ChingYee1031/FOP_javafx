@@ -6,7 +6,7 @@
 <?import javafx.scene.layout.VBox?>
 <?import javafx.scene.text.Font?>
 
-<VBox alignment="CENTER" prefHeight="600.0" prefWidth="800.0" spacing="30.0" style="-fx-background-color: black;" xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1" fx:controller="fop.assignment.GameOverController">
+<VBox alignment="CENTER" prefHeight="600.0" prefWidth="800.0" spacing="30.0" style="-fx-background-color: black;" xmlns="http://javafx.com/javafx/13" xmlns:fx="http://javafx.com/fxml/1" fx:controller="fop.assignment.GameOverController">
    <children>
       <Label text="GAME OVER" textFill="RED">
          <font>
