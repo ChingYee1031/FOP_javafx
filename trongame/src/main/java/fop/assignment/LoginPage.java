@@ -23,7 +23,6 @@ public class LoginPage {
             return;
         }
 
-        // --- FIX: Prevent CSV Corruption ---
         if (username.contains(",") || password.contains(",")) {
             errorLabel.setText("Error: Fields cannot contain commas (',').");
             return;
@@ -33,20 +32,18 @@ public class LoginPage {
         Player loadedPlayer = DataManager.login(username, password);
 
         if (loadedPlayer != null) {
-            // LOGIN SUCCESS
             App.globalPlayer = loadedPlayer;
             App.globalPassword = password; 
-            System.out.println("User Recognized. Level: " + loadedPlayer.getLevel());
+            System.out.println("User Recognized.");
         } else {
-            // LOGIN FAILED -> REGISTER NEW USER
+            // New User Registration
             App.globalPlayer = new Player(username, "#00FFFF", 3.0, 1.5);
             App.globalPassword = password;
-            
-            // Save immediately to register them
             DataManager.savePlayer(App.globalPlayer, password);
             System.out.println("New User Identity Created.");
         }
 
+        // 2. ALWAYS go to MenuPage (Tutorial check is moved to CharacterSelection)
         App.setRoot("MenuPage");
     }
 }

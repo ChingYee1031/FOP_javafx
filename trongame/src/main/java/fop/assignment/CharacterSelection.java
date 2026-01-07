@@ -108,8 +108,18 @@ public class CharacterSelection {
      * Switch to the game arena.
      */
     private void startGame() throws IOException {
-        // Logic: If the player is new (Level 1), show the Intro Story (Chapter 1).
-        // If they are a veteran (Level > 1), skip straight to the Arena.
+        // --- STEP 1: TUTORIAL CHECK ---
+        // If the player has NEVER seen the tutorial, force them to go there first.
+        if (App.globalPlayer != null && !App.globalPlayer.hasSeenTutorial()) {
+            System.out.println("First time player -> Going to Tutorial Page");
+            App.setRoot("TutorialPage");
+            return; // Stop here, do not load Arena yet.
+        }
+
+        // --- STEP 2: STORY vs ARENA ---
+        // If they have seen the tutorial, check their level.
+        // Level 1: Show Intro Story (Chapter 1)
+        // Level >1: Skip straight to Arena
         
         if (App.globalPlayer.getLevel() == 1) {
             System.out.println("New Game detected. Playing Intro Cutscene...");

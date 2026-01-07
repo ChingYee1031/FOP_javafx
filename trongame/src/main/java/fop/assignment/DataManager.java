@@ -22,20 +22,21 @@ public class DataManager {
         try (BufferedReader br = new BufferedReader(new FileReader(FILE_PATH))) {
             String line;
             while ((line = br.readLine()) != null) {
-                // FIX: Skip empty lines to keep file clean
                 if (line.trim().isEmpty()) continue;
 
                 String[] parts = line.split(",");
                 
                 // If username matches, update their data
                 if (parts.length > 0 && parts[0].equals(player.getName())) {
-                    String updatedLine = String.format("%s,%s,%d,%d,%d,%s",
+                    // FORMAT: Name, Pass, Level, XP, Score, Date, SeenTutorial
+                    String updatedLine = String.format("%s,%s,%d,%d,%d,%s,%b",
                             player.getName(),
                             password, 
                             player.getLevel(),
                             player.getXP(),
-                            calculateScore(player), // Update Score
-                            LocalDate.now().toString()
+                            calculateScore(player), 
+                            LocalDate.now().toString(),
+                            player.hasSeenTutorial() // <--- NEW DATA POINT
                     );
                     lines.add(updatedLine);
                     userFound = true;
@@ -49,8 +50,10 @@ public class DataManager {
 
         // If it's a new user, add them to the list
         if (!userFound) {
-            String newLine = String.format("%s,%s,%d,%d,%d,%s",
-                    player.getName(), password, player.getLevel(), player.getXP(), calculateScore(player), LocalDate.now().toString());
+            String newLine = String.format("%s,%s,%d,%d,%d,%s,%b",
+                    player.getName(), password, player.getLevel(), player.getXP(), 
+                    calculateScore(player), LocalDate.now().toString(),
+                    player.hasSeenTutorial());
             lines.add(newLine);
         }
 
@@ -67,13 +70,9 @@ public class DataManager {
         try (BufferedReader br = new BufferedReader(new FileReader(FILE_PATH))) {
             String line;
             while ((line = br.readLine()) != null) {
-                
-                // FIX: Skip empty lines to prevent crashes
                 if (line.trim().isEmpty()) continue; 
 
                 String[] parts = line.split(",");
-                
-                // FIX: Ensure the line has enough data before parsing
                 if (parts.length < 4) continue; 
                 
                 // Check if Username AND Password match
@@ -82,11 +81,16 @@ public class DataManager {
                         int level = Integer.parseInt(parts[2]);
                         int xp = Integer.parseInt(parts[3]);
                         
-                        // Load the saved stats into a new Player object
-                        // Default to Tron visuals, CharacterSelection will update color/speed later
+                        // Check for Tutorial Flag (Index 6)
+                        boolean seenTut = false;
+                        if (parts.length >= 7) {
+                            seenTut = Boolean.parseBoolean(parts[6]);
+                        }
+                        
                         Player p = new Player(username, "#00FFFF", 3.0, 1.5);
                         p.setLevel(level); 
-                        p.setXP(xp);       
+                        p.setXP(xp);
+                        p.setSeenTutorial(seenTut); // Load the flag
                         
                         return p;
                     } catch (NumberFormatException e) {
@@ -107,33 +111,35 @@ public class DataManager {
         try (BufferedReader br = new BufferedReader(new FileReader(FILE_PATH))) {
             String line;
             while ((line = br.readLine()) != null) {
-                
-                // FIX: Skip empty lines
                 if (line.trim().isEmpty()) continue;
 
                 String[] parts = line.split(",");
-                
-                // FIX: Ensure complete data row
                 if (parts.length >= 6) {
                     try {
                         scores.add(new PlayerScore(parts[0], Integer.parseInt(parts[2]), Integer.parseInt(parts[4]), parts[5]));
                     } catch (NumberFormatException e) {
-                        // Skip corrupted lines
                         continue; 
                     }
                 }
             }
         } catch (IOException e) { e.printStackTrace(); }
 
-        // Sort by Score (Highest first)
-        scores.sort((p1, p2) -> Integer.compare(p2.getScore(), p1.getScore()));
+        // Sort by Level then Score
+        scores.sort((p1, p2) -> {
+            int levelCompare = Integer.compare(p2.getLevel(), p1.getLevel());
+            if (levelCompare != 0) return levelCompare;
+            return Integer.compare(p2.getScore(), p1.getScore());
+        });
         
-        // Return only the Top 10
-        return scores.subList(0, Math.min(scores.size(), 10));
+        // Cut to Top 10
+        if (scores.size() > 10) {
+            return scores.subList(0, 10);
+        } else {
+            return scores;
+        }
     }
 
     private static int calculateScore(Player p) {
-        // Score Formula: (Level * 1000) + XP
         return (p.getLevel() * 1000) + p.getXP();
     }
 }

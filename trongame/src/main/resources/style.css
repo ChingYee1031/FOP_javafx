@@ -14,6 +14,18 @@
     -fx-effect: dropshadow(gaussian, #00ffff, 15, 0.4, 0, 0); /* Outer cyan glow */
 }
 
+/* --- FIX: HIDE EMPTY ROWS (The White Space) --- */
+.tron-table .table-row-cell:empty {
+    -fx-background-color: transparent;
+    -fx-border-color: transparent;
+}
+
+/* Ensure the scrolling area background is also transparent */
+.tron-table .virtual-flow .clipped-container .sheet {
+    -fx-background-color: transparent;
+}
+/* ------------------------------------------------- */
+
 /* 2. The Column Headers (NAME, LEVEL, XP SCORE) */
 .tron-table .column-header-background {
     -fx-background-color: transparent; /* No background color */

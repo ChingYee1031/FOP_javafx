@@ -93,12 +93,14 @@ public class CutscenePage {
 
     private void enterGame() {
         try {
-            // --- NEW: ENDING CHECK ---
+            // --- FIX: ENDING LOGIC ---
             if (currentChapter.startsWith("ending")) {
                 System.out.println("Game Completed. Returning to Main Menu.");
-                // Reset player so next game is fresh (Optional)
-                App.globalPlayer = null; 
-                App.setRoot("StartPage"); 
+                
+                // 1. Keep the player logged in (Removed: App.globalPlayer = null)
+                
+                // 2. Go to Menu Page instead of Start Page
+                App.setRoot("MenuPage"); 
             } 
             else {
                 // Normal Chapter -> Continue Playing
