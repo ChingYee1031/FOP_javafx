@@ -10,6 +10,7 @@ import java.util.Scanner;
 import javafx.animation.AnimationTimer;
 import javafx.animation.PauseTransition;
 import javafx.fxml.FXML;
+import javafx.geometry.VPos;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.control.Label;
@@ -19,6 +20,7 @@ import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
+import javafx.scene.text.TextAlignment;
 import javafx.util.Duration;
 
 public class ArenaController {
@@ -109,7 +111,7 @@ public class ArenaController {
         });
     }
     
-// --- MAP LOADING LOGIC ---
+    // --- MAP LOADING LOGIC ---
     private void loadLevelArena() {
         int level = player.getLevel();
         
@@ -130,7 +132,6 @@ public class ArenaController {
         } 
         // Level 30+: Arena 4 (Scales with Level)
         else {
-            // PASS THE LEVEL HERE
             model.loadRandomArena(level); 
             showMessage("ARENA 4: UNSTABLE GRID", Color.RED);
         }
@@ -228,26 +229,38 @@ public class ArenaController {
             if (levelLabel != null) levelLabel.setText("LEVEL: " + player.getLevel());
             if (xpLabel != null) xpLabel.setText("XP: " + player.getXP());
             if (livesLabel != null) livesLabel.setText(String.format("LIVES: %.1f", player.getLives()));
-            if (discLabel != null) discLabel.setText("DISC: " + player.getCurrentAmmo() + "/" + player.getMaxAmmo());
+            
+            // Show Cooldown status in the Disc Label
+            if (player.isCooldownReady()) {
+                if (discLabel != null) discLabel.setText("DISC: READY (" + player.getCurrentAmmo() + ")");
+                if (discLabel != null) discLabel.setTextFill(Color.CYAN);
+            } else {
+                long time = player.getCooldownRemaining() / 1000;
+                if (discLabel != null) discLabel.setText("WAIT: " + (time + 1) + "s");
+                if (discLabel != null) discLabel.setTextFill(Color.ORANGE);
+            }
         }
     }
 
-    private void updateGame() {
+private void updateGame() {
         if (bufferedDir != Direction.NONE) {
             currentDir = bufferedDir;
             bufferedDir = Direction.NONE; 
         }
 
+        // Spawn Enemies
         if (activeEnemies.isEmpty() || activeEnemies.size() < getMaxEnemiesForLevel()) {
             spawnNextEnemy();
             if (activeEnemies.isEmpty()) return; 
         }
 
+        // Check Player Life
         if (player == null || !player.isAlive()) {
             if (!gameOverTriggered) triggerGameOverSequence();
             return;
         }
 
+        // --- 1. MOVE PLAYER ---
         int nextX = player.getX();
         int nextY = player.getY();
         switch (currentDir) {
@@ -259,7 +272,6 @@ public class ArenaController {
         }
 
         if (currentDir != Direction.NONE) {
-            // BOUNDS CHECK
             if (nextX < 0 || nextX >= COLS || nextY < 0 || nextY >= ROWS) {
                 if(model.isOpenType()) {
                     SoundManager.playSound("fall.wav"); 
@@ -272,64 +284,82 @@ public class ArenaController {
                     spawnFloatingText("-0.5 HP", player.getX(), player.getY(), Color.ORANGE);
                     currentDir = Direction.NONE; 
                     showMessage("CRASHED!", Color.RED);
-                    return; // Stop here, don't update position
                 }
-            }
-
-            int nextCell = model.getGrid()[nextX][nextY];
-            // COLLISION CHECK
-            if (nextCell == 1 || nextCell == 2 || nextCell == 4) {
-                SoundManager.playSound("crash.wav");
-                player.reduceLives(0.5); 
-                spawnFloatingText("-0.5 HP", player.getX(), player.getY(), Color.ORANGE);
-                currentDir = Direction.NONE; 
-                showMessage("CRASHED!", Color.RED);
             } else {
-                playerTrail.add(new int[]{player.getX(), player.getY()});
-                model.processMove(player, nextX, nextY);
-                if (playerTrail.size() > MAX_TRAIL_LENGTH) {
-                    int[] old = playerTrail.poll();
-                    model.getGrid()[old[0]][old[1]] = 0; 
+                int nextCell = model.getGrid()[nextX][nextY];
+                if (nextCell == 1 || nextCell == 2 || nextCell == 4) {
+                    SoundManager.playSound("crash.wav");
+                    player.reduceLives(0.5); 
+                    spawnFloatingText("-0.5 HP", player.getX(), player.getY(), Color.ORANGE);
+                    currentDir = Direction.NONE; 
+                    showMessage("CRASHED!", Color.RED);
+                } else {
+                    playerTrail.add(new int[]{player.getX(), player.getY()});
+                    model.processMove(player, nextX, nextY);
+                    if (playerTrail.size() > MAX_TRAIL_LENGTH) {
+                        int[] old = playerTrail.poll();
+                        model.getGrid()[old[0]][old[1]] = 0; 
+                    }
                 }
             }
         }
 
-        // UPDATE DISCS
+        // --- 2. UPDATE DISCS ---
         for (int i = 0; i < discs.size(); i++) {
             Disc d = discs.get(i);
-            d.update(model.getGrid()); 
-            if (d.isStationary() && d.isActive()) {
+            
+            // --- FIX: PICKUP LOGIC (NO MAGNET) ---
+            if (d.isActive() && d.isStationary()) {
+                // Only pick up if we walk EXACTLY on top of it
                 if (d.getOwner() == player) {
-                    double dist = Math.abs(player.getX() - d.getX()) + Math.abs(player.getY() - d.getY());
-                    if (dist <= 1.5) { 
+                    if (player.getX() == d.getX() && player.getY() == d.getY()) {
                         SoundManager.playSound("pickup.wav");
                         d.returnToOwner(); 
                     }
                 }
+                // Skip movement logic for stationary discs
+                continue; 
             }
-            if (!d.isStationary() && d.isActive()) {
-                if (d.getOwner() != player) {
-                    if (player.getX() == d.getX() && player.getY() == d.getY()) {
-                        SoundManager.playSound("hit.wav");
-                        player.reduceLives(1.0); 
-                        d.returnToOwner(); 
-                    }
-                }
-                if (d.getOwner() == player) {
-                    for (Enemy e : activeEnemies) {
-                        if (e.isAlive() && e.getX() == d.getX() && e.getY() == d.getY()) {
+
+            // --- MOVEMENT LOOP (2x SPEED) ---
+            for (int speed = 0; speed < 2; speed++) {
+                
+                if (!d.isActive() || d.isStationary()) break;
+
+                d.update(model.getGrid()); 
+
+                // Hit Logic (While Moving)
+                if (!d.isStationary() && d.isActive()) {
+                    // Hit Player?
+                    if (d.getOwner() != player) {
+                        if (player.getX() == d.getX() && player.getY() == d.getY()) {
                             SoundManager.playSound("hit.wav");
-                            e.reduceLives(1.0);
-                            spawnFloatingText("CRIT!", e.getX(), e.getY(), Color.RED);
+                            player.reduceLives(1.0); 
                             d.returnToOwner(); 
                         }
                     }
+                    // Hit Enemy?
+                    if (d.getOwner() == player) {
+                        for (Enemy e : activeEnemies) {
+                            if (e.isAlive() && e.getX() == d.getX() && e.getY() == d.getY()) {
+                                SoundManager.playSound("hit.wav");
+                                e.reduceLives(1.0);
+                                spawnFloatingText("CRIT!", e.getX(), e.getY(), Color.RED);
+                                d.returnToOwner(); 
+                            }
+                        }
+                    }
                 }
+            } // End Speed Loop
+
+            // Clean up dead discs
+            if (!d.isActive()) { 
+                discs.remove(i); 
+                i--; 
             }
-            if (!d.isActive()) { discs.remove(i); i--; }
         }
 
-        // UPDATE ENEMIES
+        // --- 3. UPDATE ENEMIES ---
         while (enemyTrails.size() < activeEnemies.size()) enemyTrails.add(new LinkedList<>());
         for (int i = 0; i < activeEnemies.size(); i++) {
             Enemy e = activeEnemies.get(i);
@@ -340,14 +370,13 @@ public class ArenaController {
                 i--; continue;
             }
             
-            // --- FIX: HEAD-ON COLLISION CHECK ---
-            // If enemy is on top of player, both crash
+            // Head-On Collision
             if (e.getX() == player.getX() && e.getY() == player.getY()) {
                  SoundManager.playSound("crash.wav");
-                 e.reduceLives(100);       // Kill Enemy
-                 player.reduceLives(100);  // Kill Player
+                 e.reduceLives(100);       
+                 player.reduceLives(100);  
                  triggerGameOverSequence();
-                 return; // End loop
+                 return; 
             }
 
             if (e.canShoot()) {
@@ -411,7 +440,7 @@ public class ArenaController {
         }
     }
 
-private void draw() {
+    private void draw() {
         GraphicsContext gc = gameCanvas.getGraphicsContext2D();
         
         // 1. CLEAR SCREEN
@@ -447,34 +476,33 @@ private void draw() {
             }
         }
 
-        // 4. DRAW ENTITIES
-        for (Disc d : discs) d.draw(gc, CELL);
+        // 4. DRAW CHARACTERS (Bottom Layer)
         drawCharacter(gc, player);
         for (Enemy e : activeEnemies) drawCharacter(gc, e);
         
-        // 5. DRAW HUD MESSAGE (Top-Center, Original Size)
+        // 5. DRAW DISCS (Top Layer - Floating Effect)
+        for (Disc d : discs) d.draw(gc, CELL);
+        
+        // 6. DRAW HUD MESSAGE (Top-Center)
         if (!gameMessage.isEmpty() && (System.nanoTime() - messageTimer) < 2_000_000_000L) {
-            gc.save(); // Save state
+            gc.save(); 
+            gc.setTextAlign(TextAlignment.CENTER);
+            gc.setTextBaseline(VPos.TOP); 
             
-            // Set Alignment to Center so we don't have to guess the X coordinate
-            gc.setTextAlign(javafx.scene.text.TextAlignment.CENTER);
-            gc.setTextBaseline(javafx.geometry.VPos.TOP); // Draw from top down
-            
-            // Original Size (20)
             gc.setFont(Font.font("Verdana", FontWeight.BOLD, 20));
             
             double centerX = gameCanvas.getWidth() / 2;
-            double topY = 60; // Fixed at the top
+            double topY = 60; 
             
-            // Optional: Slight black shadow for readability
+            // Shadow
             gc.setFill(Color.BLACK);
             gc.fillText(gameMessage, centerX + 2, topY + 2);
 
-            // Main Text Color
+            // Main Text
             gc.setFill(messageColor);
             gc.fillText(gameMessage, centerX, topY);
             
-            gc.restore(); // Restore state
+            gc.restore(); 
         }
     }
 
@@ -568,23 +596,49 @@ private void draw() {
     @FXML
     public void handleKeyPress(KeyEvent event) {
         if (!gameStarted || gameOverTriggered || isPaused) return; 
+        
         if (event.getCode() == KeyCode.SPACE) {
-            if (player.hasAmmo()) { 
-                SoundManager.playSound("shoot.wav");
-                player.useAmmo();   
-                discs.add(new Disc(player.getX(), player.getY(), lastFacingDir, player));
-            } else { showMessage("NO DISC REMAIN!", Color.RED); }
+            // Check 1: Ammo
+            if (!player.hasAmmo()) {
+                showMessage("NO DISC REMAIN!", Color.RED);
+                return;
+            }
+            
+            // Check 2: Cooldown (5 Seconds)
+            if (!player.isCooldownReady()) {
+                long timeLeft = player.getCooldownRemaining() / 1000;
+                showMessage("COOLDOWN: " + (timeLeft + 1) + "s", Color.ORANGE);
+                return;
+            }
+
+            // Execute Throw
+            SoundManager.playSound("shoot.wav");
+            player.useAmmo();
+            player.resetCooldown(); // Start Timer
+            
+            // --- FIX: SPAWN DISC 1 BLOCK AHEAD ---
+            int spawnX = player.getX();
+            int spawnY = player.getY();
+            
+            switch(lastFacingDir) {
+                case 0: spawnY--; break; // UP
+                case 1: spawnY++; break; // DOWN
+                case 2: spawnX--; break; // LEFT
+                case 3: spawnX++; break; // RIGHT
+            }
+            
+            discs.add(new Disc(spawnX, spawnY, lastFacingDir, player));
             return;
         }
+        
         switch (event.getCode()) {
             case W: if (currentDir != Direction.DOWN) bufferedDir = Direction.UP; break;
             case S: if (currentDir != Direction.UP)   bufferedDir = Direction.DOWN; break;
             case A: if (currentDir != Direction.RIGHT) bufferedDir = Direction.LEFT; break;
             case D: if (currentDir != Direction.LEFT)  bufferedDir = Direction.RIGHT; break;
-            case L: 
+            case L: /* Cheat logic */ 
                 int oldCheatLevel = player.getLevel();
                 player.addXP(5000); 
-                System.out.println("CHEAT: Level is now " + player.getLevel());
                 if (player.getLevel() > oldCheatLevel) {
                     if (player.getLevel() >= 99) triggerGameWinSequence(); 
                     else checkStoryProgression(player.getLevel()); 
