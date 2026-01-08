@@ -5,7 +5,7 @@ import java.util.Random;
 public class ArenaModel {
     public static final int GRID_SIZE = 40;
     
-    // 0 = Empty, 1 = Wall/Obstacle, 2 = Player Trail, 3 = Speed Ramp, 4 = Enemy Trail
+    // 0 = Empty, 1 = Wall, 2 = Player Trail, 3 = Speed Ramp, 4 = Enemy Trail
     private int[][] grid = new int[GRID_SIZE][GRID_SIZE];
     
     private boolean isOpenType = false; 
@@ -15,13 +15,10 @@ public class ArenaModel {
         // Default constructor
     }
 
-    // --- ARENA GENERATION LOGIC ---
-
     // LEVEL 1-9: THE GRID (Basic Empty Box)
     public void loadArena1() {
         reset(false); 
         addOuterBoundaries(); 
-        // A clean slate for beginners
     }
 
     // LEVEL 10-19: ACCELERATION (Speed Ramps)
@@ -29,57 +26,68 @@ public class ArenaModel {
         reset(false); 
         addOuterBoundaries();
         
-        // Add "Highways" of speed ramps (Yellow/Cyan in UI)
+        // Add "Highways" of speed ramps
         for(int i=5; i<35; i++) {
-            grid[i][10] = 3; // Top horizontal ramp
-            grid[i][30] = 3; // Bottom horizontal ramp
+            grid[i][10] = 3; 
+            grid[i][30] = 3; 
         }
         for(int j=10; j<30; j++) {
-            grid[20][j] = 3; // Central vertical ramp
+            grid[20][j] = 3; 
         }
     }
 
-    // LEVEL 20-29: THE BUNKER (Close Quarters Obstacles)
+    // --- CHANGED: EASIER VERSION ---
+    // LEVEL 20-29: THE BUNKER (Sparse Obstacles)
     public void loadArena3() {
         reset(false); 
         addOuterBoundaries();
         
-        // Create a "Pillar" layout to force tight maneuvering
-        for (int x = 5; x < 35; x += 5) {
-            for (int y = 5; y < 35; y += 5) {
-                // Create 2x2 blocks of walls
-                grid[x][y] = 1;
-                grid[x+1][y] = 1;
-                grid[x][y+1] = 1;
-                grid[x+1][y+1] = 1;
-            }
+        // Old version was too tight. 
+        // New version: 4 Long walls for cover, but wide open center.
+        
+        // Vertical Walls
+        for (int y = 10; y < 30; y++) {
+            grid[10][y] = 1;
+            grid[30][y] = 1;
         }
         
-        // Clear the center for spawning
-        for(int x=18; x<=22; x++){
-            for(int y=18; y<=22; y++){
-                grid[x][y] = 0;
+        // Horizontal Walls (with gap in middle)
+        for (int x = 12; x < 29; x++) {
+            if (x < 18 || x > 22) { // Leave a gap in the very center
+                grid[x][10] = 1;
+                grid[x][30] = 1;
             }
         }
     }
 
-    // LEVEL 30+: THE GLITCH (Randomized Open Grid)
-    // "Falling off the grid will result in immediate derezzing"
-    public void loadRandomArena() {
-        reset(true); // <--- OPEN TYPE (No outer walls, can fall off)
+    // --- CHANGED: SCALING DIFFICULTY ---
+    // LEVEL 30+: THE GLITCH (Randomized & Scaling)
+    public void loadRandomArena(int currentLevel) {
+        reset(true); // Open Type (Falling is possible)
         
         Random rand = new Random();
-        int obstacleCount = 40 + rand.nextInt(20); 
         
+        // FORMULA: Base 30 obstacles + 2 obstacles for every level above 30
+        // Level 30 = 30 obstacles
+        // Level 50 = 70 obstacles
+        // Level 99 = ~170 obstacles
+        int difficultyScaling = (currentLevel - 30) * 2;
+        if (difficultyScaling < 0) difficultyScaling = 0;
+        
+        int obstacleCount = 30 + difficultyScaling;
+        
+        // Cap the max obstacles so map is not impossible (Max 400 cells are walls)
+        if (obstacleCount > 400) obstacleCount = 400;
+
         for (int i = 0; i < obstacleCount; i++) {
             int rx = rand.nextInt(GRID_SIZE);
             int ry = rand.nextInt(GRID_SIZE);
             
-            // Don't spawn obstacles on the player start zone (Center)
-            if (Math.abs(rx - 20) < 5 && Math.abs(ry - 20) < 5) continue;
+            // Safe Zone: Don't spawn on the center 6x6 area where player starts
+            if (Math.abs(rx - 20) < 4 && Math.abs(ry - 20) < 4) continue;
             
-            // 70% Chance of Speed Ramp (Glitchy terrain), 30% Wall
-            if (rand.nextDouble() > 0.3) grid[rx][ry] = 3;
+            // 80% Wall, 20% Speed Ramp (Glitch)
+            if (rand.nextDouble() > 0.8) grid[rx][ry] = 3;
             else grid[rx][ry] = 1;
         }
     }
@@ -101,37 +109,25 @@ public class ArenaModel {
     }
 
     public void processMove(GameCharacter c, int nextX, int nextY) {
-        int oldX = c.getX();
-        int oldY = c.getY();
-
-        // 1. Check Falling Off (Only happens in Arena 4 / Open Type)
+        // Check Falling Off (Arena 4 only)
         if (nextX < 0 || nextX >= GRID_SIZE || nextY < 0 || nextY >= GRID_SIZE) {
-            if (isOpenType) {
-                c.reduceLives(100); // Instant Kill
-                System.out.println(c.getName() + " fell off the grid!");
-            }
+            // Logic handled in Controller, but model knows it's invalid
             return; 
         }
 
-        // 2. Check Collision
+        // Check Collision
         int targetCell = grid[nextX][nextY];
         
-        // Check for Speed Ramp (3)
         if (targetCell == 3) this.speedBoostActive = true; 
         else this.speedBoostActive = false;
 
-        // Hit Wall (1), Player Trail (2), or Enemy Trail (4)
-        if (targetCell == 1 || targetCell == 2 || targetCell == 4) {
-            c.reduceLives(0.5); 
+        // Valid Move - Leave Trail
+        if (c instanceof Player) {
+            grid[c.getX()][c.getY()] = 2; // Old spot becomes trail
         } else {
-            // Valid Move - Leave Trail
-            if (c instanceof Player) {
-                grid[oldX][oldY] = 2; // Player Trail
-            } else {
-                grid[oldX][oldY] = 4; // Enemy Trail
-            }
-            c.setPosition(nextX, nextY);
+            grid[c.getX()][c.getY()] = 4; // Enemy trail
         }
+        c.setPosition(nextX, nextY);
     }
 
     public boolean isSpeedBoostActive() { return speedBoostActive; }

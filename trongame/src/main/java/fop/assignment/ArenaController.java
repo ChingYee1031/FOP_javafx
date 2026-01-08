@@ -109,7 +109,7 @@ public class ArenaController {
         });
     }
     
-    // --- ARENA SELECTION LOGIC ---
+// --- MAP LOADING LOGIC ---
     private void loadLevelArena() {
         int level = player.getLevel();
         
@@ -118,19 +118,20 @@ public class ArenaController {
             model.loadArena1(); 
             showMessage("ARENA 1: THE GRID");
         } 
-        // Level 10-19: Arena 2 (Unlocks after Chapter 2 cutscene)
+        // Level 10-19: Arena 2
         else if (level < 20) {
             model.loadArena2(); 
             showMessage("ARENA 2: ACCELERATION");
         } 
-        // Level 20-29: Arena 3 (Unlocks after Chapter 3 cutscene)
+        // Level 20-29: Arena 3 (Easier Version)
         else if (level < 30) {
             model.loadArena3(); 
             showMessage("ARENA 3: THE BUNKER");
         } 
-        // Level 30+: Arena 4 (Unlocks after Chapter 4 cutscene)
+        // Level 30+: Arena 4 (Scales with Level)
         else {
-            model.loadRandomArena(); 
+            // PASS THE LEVEL HERE
+            model.loadRandomArena(level); 
             showMessage("ARENA 4: UNSTABLE GRID", Color.RED);
         }
     }
@@ -410,15 +411,20 @@ public class ArenaController {
         }
     }
 
-    private void draw() {
+private void draw() {
         GraphicsContext gc = gameCanvas.getGraphicsContext2D();
+        
+        // 1. CLEAR SCREEN
         gc.setFill(Color.BLACK);
         gc.fillRect(0, 0, gameCanvas.getWidth(), gameCanvas.getHeight());
+        
+        // 2. DRAW GRID LINES
         gc.setStroke(Color.web("#222222"));
         gc.setLineWidth(1);
         for(int x = 0; x <= COLS; x++) gc.strokeLine(x * CELL, 0, x * CELL, ROWS * CELL);
         for(int y = 0; y <= ROWS; y++) gc.strokeLine(0, y * CELL, COLS * CELL, y * CELL);
 
+        // 3. DRAW GRID OBJECTS
         int[][] grid = model.getGrid();
         for (int x = 0; x < COLS; x++) {
             for (int y = 0; y < ROWS; y++) {
@@ -441,14 +447,34 @@ public class ArenaController {
             }
         }
 
+        // 4. DRAW ENTITIES
         for (Disc d : discs) d.draw(gc, CELL);
         drawCharacter(gc, player);
         for (Enemy e : activeEnemies) drawCharacter(gc, e);
         
+        // 5. DRAW HUD MESSAGE (Top-Center, Original Size)
         if (!gameMessage.isEmpty() && (System.nanoTime() - messageTimer) < 2_000_000_000L) {
-            gc.setFill(messageColor); 
+            gc.save(); // Save state
+            
+            // Set Alignment to Center so we don't have to guess the X coordinate
+            gc.setTextAlign(javafx.scene.text.TextAlignment.CENTER);
+            gc.setTextBaseline(javafx.geometry.VPos.TOP); // Draw from top down
+            
+            // Original Size (20)
             gc.setFont(Font.font("Verdana", FontWeight.BOLD, 20));
-            gc.fillText(gameMessage, 50, 60);
+            
+            double centerX = gameCanvas.getWidth() / 2;
+            double topY = 60; // Fixed at the top
+            
+            // Optional: Slight black shadow for readability
+            gc.setFill(Color.BLACK);
+            gc.fillText(gameMessage, centerX + 2, topY + 2);
+
+            // Main Text Color
+            gc.setFill(messageColor);
+            gc.fillText(gameMessage, centerX, topY);
+            
+            gc.restore(); // Restore state
         }
     }
 
