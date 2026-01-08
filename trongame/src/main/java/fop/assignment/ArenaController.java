@@ -14,6 +14,7 @@ import javafx.geometry.VPos;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.control.Label;
+import javafx.scene.effect.DropShadow;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.VBox;
@@ -308,27 +309,23 @@ private void updateGame() {
         for (int i = 0; i < discs.size(); i++) {
             Disc d = discs.get(i);
             
-            // --- FIX: PICKUP LOGIC (NO MAGNET) ---
+            // Pickup Logic (Exact tile match required)
             if (d.isActive() && d.isStationary()) {
-                // Only pick up if we walk EXACTLY on top of it
                 if (d.getOwner() == player) {
                     if (player.getX() == d.getX() && player.getY() == d.getY()) {
                         SoundManager.playSound("pickup.wav");
                         d.returnToOwner(); 
                     }
                 }
-                // Skip movement logic for stationary discs
                 continue; 
             }
 
-            // --- MOVEMENT LOOP (2x SPEED) ---
+            // Movement Loop (2x Speed)
             for (int speed = 0; speed < 2; speed++) {
-                
                 if (!d.isActive() || d.isStationary()) break;
 
                 d.update(model.getGrid()); 
 
-                // Hit Logic (While Moving)
                 if (!d.isStationary() && d.isActive()) {
                     // Hit Player?
                     if (d.getOwner() != player) {
@@ -350,17 +347,13 @@ private void updateGame() {
                         }
                     }
                 }
-            } // End Speed Loop
-
-            // Clean up dead discs
-            if (!d.isActive()) { 
-                discs.remove(i); 
-                i--; 
-            }
+            } 
+            if (!d.isActive()) { discs.remove(i); i--; }
         }
 
         // --- 3. UPDATE ENEMIES ---
         while (enemyTrails.size() < activeEnemies.size()) enemyTrails.add(new LinkedList<>());
+        
         for (int i = 0; i < activeEnemies.size(); i++) {
             Enemy e = activeEnemies.get(i);
             Queue<int[]> eTrail = enemyTrails.get(i);
@@ -379,6 +372,7 @@ private void updateGame() {
                  return; 
             }
 
+            // Shooting
             if (e.canShoot()) {
                 boolean shoot = false; int shotDir = -1;
                 if (e.getX() == player.getX()) {
@@ -394,18 +388,33 @@ private void updateGame() {
                 if (shoot) { e.useAmmo(); discs.add(new Disc(e.getX(), e.getY(), shotDir, e)); }
             }
             
+            // Get Move Decision from AI
             int moveDir = e.makeMove(model.getGrid());
-            int ex = e.getX(); int ey = e.getY();
-            if (moveDir == 0) ey--; else if (moveDir == 1) ey++; 
-            else if (moveDir == 2) ex--; else if (moveDir == 3) ex++; 
 
-            if (ex >= 0 && ex < COLS && ey >= 0 && ey < ROWS) {
-                eTrail.add(new int[]{e.getX(), e.getY()});
-                model.processMove(e, ex, ey);
+            // --- TRAP LOGIC START ---
+            if (moveDir == -2) {
+                // Enemy is trapped! Kill them.
+                SoundManager.playSound("crash.wav");
+                e.reduceLives(100); 
+                spawnFloatingText("TRAPPED!", e.getX(), e.getY(), Color.RED);
+                continue; // Skip to next enemy (will be removed next frame)
             }
-            if (eTrail.size() > MAX_TRAIL_LENGTH) {
-                int[] old = eTrail.poll();
-                model.getGrid()[old[0]][old[1]] = 0;
+            // --- TRAP LOGIC END ---
+
+            // Execute Move (Only if 0-3)
+            if (moveDir >= 0) {
+                int ex = e.getX(); int ey = e.getY();
+                if (moveDir == 0) ey--; else if (moveDir == 1) ey++; 
+                else if (moveDir == 2) ex--; else if (moveDir == 3) ex++; 
+
+                if (ex >= 0 && ex < COLS && ey >= 0 && ey < ROWS) {
+                    eTrail.add(new int[]{e.getX(), e.getY()});
+                    model.processMove(e, ex, ey);
+                }
+                if (eTrail.size() > MAX_TRAIL_LENGTH) {
+                    int[] old = eTrail.poll();
+                    model.getGrid()[old[0]][old[1]] = 0;
+                }
             }
         }
     }
@@ -648,15 +657,49 @@ private void updateGame() {
         }
     }
 
-    private void drawCharacter(GraphicsContext gc, GameCharacter c) {
+private void drawCharacter(GraphicsContext gc, GameCharacter c) {
         if (c != null && c.isAlive()) {
+            
+            // 1. ERASE BACKGROUND FIRST
+            // Paints a black square to hide any trail/grid lines directly underneath
+            gc.setFill(Color.BLACK);
+            gc.fillRect(c.getX() * CELL, c.getY() * CELL, CELL - 1, CELL - 1);
+
+            // 2. SETUP GLOW EFFECT (Only for Player)
+            // This separates the "Head" (Glowing) from the "Jetwall" (Flat)
+            if (c == player) {
+                gc.save(); // Save the current state (clean)
+                
+                DropShadow glow = new DropShadow();
+                glow.setColor(Color.web(c.getColor())); // Glow matches player color
+                glow.setRadius(20); // How wide the glow is
+                glow.setSpread(0.5); // How intense the glow is
+                
+                gc.setEffect(glow); // Apply the effect
+            }
+
+            // 3. DRAW THE CHARACTER
             if (c instanceof Enemy && ((Enemy)c).getIcon() != null) {
+                // Draw Enemy Icon
                 double size = CELL * 1.5; 
                 double offset = (size - CELL) / 2;
                 gc.drawImage(((Enemy)c).getIcon(), (c.getX() * CELL) - offset, (c.getY() * CELL) - offset, size, size);
             } else {
+                // Draw Player (The "Head")
                 gc.setFill(Color.web(c.getColor()));
                 gc.fillRect(c.getX() * CELL, c.getY() * CELL, CELL - 1, CELL - 1);
+                
+                // OPTIONAL: Add a "White Core" to look like a light source
+                // This makes the head look brighter than the trail
+                if (c == player) {
+                    gc.setFill(Color.WHITE);
+                    gc.fillRect((c.getX() * CELL) + 4, (c.getY() * CELL) + 4, CELL - 9, CELL - 9);
+                }
+            }
+
+            // 4. RESTORE STATE (Turn off glow)
+            if (c == player) {
+                gc.restore(); // Go back to normal drawing for the next items
             }
         }
     }
