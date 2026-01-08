@@ -39,10 +39,10 @@
                </cursor>
             </Button>
             
-            <Button mnemonicParsing="false" onAction="#handleExit" 
+            <Button mnemonicParsing="false" onAction="#handleRestart" 
                     prefHeight="40.0" prefWidth="200.0" 
                     styleClass="exit-button" 
-                    text="EXIT GAME">
+                    text="TRY AGAIN">
                <font>
                   <Font size="16.0" />
                </font>
