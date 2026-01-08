@@ -7,16 +7,19 @@ public abstract class GameCharacter {
     protected double speed;
     protected int x, y;
     
-    // --- NEW: Ammo System ---
+    // Ammo System
     protected int maxDiscSlots = 1; 
     protected int currentDiscSlots = 1;
+    
+    // Cooldown Tracking
+    protected long lastThrowTime = 0;
+    protected static final long COOLDOWN_MS = 5000; // 5 Seconds
 
     public GameCharacter(String name, String color, double lives, double speed) {
         this.name = name;
         this.color = color;
         this.lives = lives;
         this.speed = speed;
-        // Default start (Will be overridden by Player logic)
         this.maxDiscSlots = 1;
         this.currentDiscSlots = 1;
     }
@@ -40,7 +43,7 @@ public abstract class GameCharacter {
         return lives > 0;
     }
 
-    // --- NEW: AMMO METHODS ---
+    // --- AMMO & COOLDOWN METHODS ---
     public boolean hasAmmo() {
         return currentDiscSlots > 0;
     }
@@ -50,7 +53,26 @@ public abstract class GameCharacter {
     }
 
     public void recoverAmmo() {
-        if (currentDiscSlots < maxDiscSlots) currentDiscSlots++;
+        if (currentDiscSlots < maxDiscSlots) {
+            currentDiscSlots++;
+            // --- FIX: Picking up a disc instantly resets the cooldown ---
+            // This allows you to throw immediately after a successful catch.
+            this.lastThrowTime = 0; 
+        }
+    }
+
+    public boolean isCooldownReady() {
+        // If we haven't thrown recently, we are ready
+        return System.currentTimeMillis() - lastThrowTime >= COOLDOWN_MS;
+    }
+    
+    public void resetCooldown() {
+        lastThrowTime = System.currentTimeMillis();
+    }
+    
+    public long getCooldownRemaining() {
+        long diff = COOLDOWN_MS - (System.currentTimeMillis() - lastThrowTime);
+        return (diff < 0) ? 0 : diff;
     }
 
     public int getCurrentAmmo() { return currentDiscSlots; }

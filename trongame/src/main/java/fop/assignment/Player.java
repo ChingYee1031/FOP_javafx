@@ -5,15 +5,16 @@ public class Player extends GameCharacter {
     private int xp = 0;
     private int level = 1;
     private final int MAX_LEVEL = 99; 
+    private boolean seenTutorial = false; 
 
     public Player(String name, String color, double lives, double speed) {
         super(name, color, lives, speed);
         
-        // --- DISC SLOT SETUP ---
+        // Initial Slots based on Character
         if (name.equalsIgnoreCase("Kevin")) {
-            this.maxDiscSlots = 5; // Kevin starts with 5 slots
+            this.maxDiscSlots = 5; 
         } else {
-            this.maxDiscSlots = 3; // Tron starts with 3 slots
+            this.maxDiscSlots = 3; 
         }
         this.currentDiscSlots = this.maxDiscSlots;
     }
@@ -21,7 +22,7 @@ public class Player extends GameCharacter {
     public void addXP(int amount) {
         this.xp += amount;
         
-        // Simple Level Up Formula
+        // Level Up Threshold
         int xpNeeded = (level <= 10) ? level * 100 : level * 300; 
         
         while (this.xp >= xpNeeded && level < MAX_LEVEL) {
@@ -31,21 +32,19 @@ public class Player extends GameCharacter {
         }
     }
 
-
     public void levelUp() {
         level++;
         
-        // --- REQUIREMENT: +1 life every 10 levels ---
+        // Requirement: +1 Life every 10 levels
         if (level % 10 == 0) {
             this.lives += 1.0;
-            System.out.println("BONUS: +1 Life! Current: " + this.lives);
         }
 
         // --- REQUIREMENT: +1 Disc Slot every 15 Levels ---
         if (level % 15 == 0) {
             this.maxDiscSlots++;
-            this.currentDiscSlots++; 
-            System.out.println("UPGRADE: Disc Slots Increased to " + maxDiscSlots);
+            this.currentDiscSlots++; // Fill the new slot immediately
+            System.out.println("UPGRADE: Max Disc Slots increased to " + maxDiscSlots);
         }
 
         // Stat Boosts
@@ -67,4 +66,7 @@ public class Player extends GameCharacter {
     public void setName(String name) { this.name = name; }
     public void setColor(String color) { this.color = color; }
     public void setSpeed(double speed) { this.speed = speed; }
+
+    public boolean hasSeenTutorial() { return seenTutorial; }
+    public void setSeenTutorial(boolean seen) { this.seenTutorial = seen; }
 }

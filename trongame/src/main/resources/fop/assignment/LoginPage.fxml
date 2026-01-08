@@ -11,15 +11,15 @@
 <?import javafx.scene.layout.VBox?>
 <?import javafx.scene.text.Font?>
 
-<StackPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="400.0" prefWidth="600.0" xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1" fx:controller="fop.assignment.LoginPage">
+<StackPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="720.0" prefWidth="1280.0" xmlns="http://javafx.com/javafx/25" xmlns:fx="http://javafx.com/fxml/1" fx:controller="fop.assignment.LoginPage">
    <children>
-      <ImageView fitHeight="480.0" fitWidth="640.0" focusTraversable="true" pickOnBounds="true" StackPane.alignment="CENTER">
+      <ImageView fitHeight="720.0" fitWidth="1280.0" focusTraversable="true" pickOnBounds="true" StackPane.alignment="CENTER">
          <image>
             <Image url="@tron_background.png" />
          </image>
       </ImageView>
 
-      <VBox alignment="CENTER" maxHeight="-Infinity" maxWidth="-Infinity" prefHeight="300.0" prefWidth="300.0" spacing="10.0" style="-fx-background-color: rgba(0,0,0,0.7); -fx-background-radius: 15; -fx-padding: 20;">
+      <VBox alignment="CENTER" maxHeight="-Infinity" maxWidth="-Infinity" prefHeight="300.0" prefWidth="300.0" spacing="10.0" style="-fx-background-color: rgba(0, 20, 40, 0.85); -fx-background-radius: 15; -fx-padding: 20; -fx-border-color: #00ffff; -fx-border-width: 1; -fx-border-radius: 15;">
          <children>
             <Label text="TRON ACCESS PORT" textFill="#00ffff">
                <font>
@@ -53,9 +53,9 @@
                </font>
             </Label>
 
-            <Button fx:id="loginButton" mnemonicParsing="false" onAction="#handleLogin" style="-fx-background-color: #00ffff; -fx-cursor: hand;" text="INITIALIZE" textFill="#0a0a0a">
+            <Button fx:id="loginButton" mnemonicParsing="false" onAction="#handleLogin" style="-fx-background-color: #00ffff; -fx-cursor: hand;" text="LOGIN" textFill="#0a0a0a">
                <font>
-                  <Font name="System Bold" size="14.0" />
+                  <Font name="System Bold Italic" size="18.0" />
                </font>
                <VBox.margin>
                   <Insets top="15.0" />

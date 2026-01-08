@@ -16,6 +16,9 @@ public class LeaderboardPage {
     @FXML private TableColumn<PlayerScore, String> nameColumn;
     @FXML private TableColumn<PlayerScore, Integer> levelColumn;
     @FXML private TableColumn<PlayerScore, Integer> scoreColumn;
+    
+    // --- NEW: Inject the Date Column ---
+    @FXML private TableColumn<PlayerScore, String> dateColumn; 
 
     @FXML
     public void initialize() {
@@ -23,36 +26,45 @@ public class LeaderboardPage {
         nameColumn.setCellValueFactory(new PropertyValueFactory<>("name"));
         levelColumn.setCellValueFactory(new PropertyValueFactory<>("level"));
         scoreColumn.setCellValueFactory(new PropertyValueFactory<>("score"));
+        
+        // --- NEW: Link Date Column ---
+        dateColumn.setCellValueFactory(new PropertyValueFactory<>("date"));
 
-        // 2. Load Real Data from DataManager
-        System.out.println("Attempting to load leaderboard data...");
+        // 2. Load Real Data
         List<PlayerScore> topPlayers = DataManager.getTopPlayers();
         
-        if (topPlayers.isEmpty()) {
-            System.out.println("WARNING: No players found in users.csv!");
-        } else {
-            System.out.println("Loaded " + topPlayers.size() + " players.");
+        // LIMIT TO TOP 10
+        if (topPlayers.size() > 10) {
+            topPlayers = topPlayers.subList(0, 10);
         }
 
         // 3. Put data in table
         ObservableList<PlayerScore> data = FXCollections.observableArrayList(topPlayers);
         scoreTable.setItems(data);
+
+        // --- REMOVE EMPTY SPACE LOGIC ---
+        int rowHeight = 35;  
+        int headerHeight = 32; 
+        
+        scoreTable.setFixedCellSize(rowHeight);
+        
+        int totalHeight = (topPlayers.size() * rowHeight) + headerHeight + 5;
+        
+        scoreTable.setPrefHeight(totalHeight);
+        scoreTable.setMinHeight(totalHeight);
+        scoreTable.setMaxHeight(totalHeight);
     }
 
     @FXML
     private void handleBack() {
         try {
-            // --- FIX: SMART NAVIGATION ---
-            // If a player is logged in, go back to Character Selection (so they don't have to login again).
-            // If no one is logged in (Guest), go back to the Start Page (Title Screen).
             if (App.globalPlayer != null) {
-                App.setRoot("CharacterSelection"); 
+                App.setRoot("MenuPage"); 
             } else {
-                App.setRoot("StartPage"); // Changed from "MenuPage" to "StartPage"
+                App.setRoot("StartPage"); 
             }
         } catch (IOException e) {
             e.printStackTrace();
-            System.out.println("ERROR: Could not load the previous screen.");
         }
     }
 }

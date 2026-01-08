@@ -1,14 +1,104 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
+<?import javafx.geometry.Insets?>
 <?import javafx.scene.canvas.Canvas?>
-<?import javafx.scene.layout.AnchorPane?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.image.Image?>
+<?import javafx.scene.image.ImageView?>
+<?import javafx.scene.layout.StackPane?>
 <?import javafx.scene.layout.VBox?>
+<?import javafx.scene.text.Font?>
 
-<AnchorPane onKeyPressed="#handleKeyPress" xmlns="http://javafx.com/javafx/25" xmlns:fx="http://javafx.com/fxml/1" fx:controller="fop.assignment.ArenaController">
+<StackPane fx:id="rootPane" prefHeight="720.0" prefWidth="1280.0" 
+           style="-fx-background-color: black;" 
+           stylesheets="@style.css"
+           xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1" 
+           fx:controller="fop.assignment.ArenaController">
    <children>
-      <Canvas fx:id="gameCanvas" height="800.0" width="800.0" mouseTransparent="true" pickOnBounds="true" />
       
-      <VBox fx:id="characterMenu" alignment="CENTER" layoutX="194.0" layoutY="191.0" prefHeight="200.0" prefWidth="100.0" visible="false" />
-      
-      </children>
-</AnchorPane>
+      <ImageView fitHeight="720.0" fitWidth="1280.0" pickOnBounds="true" preserveRatio="false">
+         <image>
+            <Image url="@tron_background.png" />
+         </image>
+      </ImageView>
+
+      <Canvas fx:id="gameCanvas" height="720.0" width="720.0" StackPane.alignment="CENTER" />
+
+      <VBox alignment="TOP_LEFT" maxWidth="260.0" prefHeight="720.0" prefWidth="260.0" spacing="15.0" style="-fx-background-color: rgba(0, 0, 0, 0.5); -fx-border-color: cyan; -fx-border-width: 0 2px 0 0;" StackPane.alignment="CENTER_LEFT">
+         <padding>
+            <Insets left="30.0" right="10.0" top="30.0" />
+         </padding>
+         <children>
+            <Label fx:id="nameLabel" text="CHARACTER: TRON" textFill="WHITE">
+               <font>
+                  <Font name="Consolas Bold" size="16.0" />
+               </font>
+            </Label>
+            <Label fx:id="levelLabel" text="LEVEL: 1" textFill="WHITE">
+               <font>
+                  <Font name="Consolas Bold" size="16.0" />
+               </font>
+            </Label>
+            <Label fx:id="xpLabel" text="XP: 0" textFill="GOLD">
+               <font>
+                  <Font name="Consolas Bold" size="16.0" />
+               </font>
+            </Label>
+            <Label fx:id="livesLabel" text="LIVES: 3.0" textFill="RED">
+               <font>
+                  <Font name="Consolas Bold" size="16.0" />
+               </font>
+            </Label>
+            <Label fx:id="discLabel" text="DISC: 3/3" textFill="LIME">
+               <font>
+                  <Font name="Consolas Bold" size="16.0" />
+               </font>
+            </Label>
+         </children>
+      </VBox>
+
+      <StackPane pickOnBounds="false">
+         <children>
+            <Button focusTraversable="false" mnemonicParsing="false" onAction="#handlePauseButton" style="-fx-background-color: #333333; -fx-text-fill: white; -fx-border-color: cyan;" text="PAUSE ||" StackPane.alignment="TOP_RIGHT">
+               <font>
+                  <Font name="Consolas Bold" size="14.0" />
+               </font>
+               <StackPane.margin>
+                  <Insets right="30.0" top="30.0" />
+               </StackPane.margin>
+            </Button>
+         </children>
+      </StackPane>
+
+      <VBox fx:id="pauseMenu" alignment="CENTER" spacing="20.0" style="-fx-background-color: rgba(0, 0, 0, 0.9);" visible="false">
+         <children>
+            <Label text="GAME PAUSED" textFill="CYAN">
+               <font>
+                  <Font name="OCR A Extended" size="40.0" />
+               </font>
+            </Label>
+            
+            <Button mnemonicParsing="false" onAction="#handleResume" 
+                    prefHeight="50.0" prefWidth="200.0" 
+                    styleClass="pause-button-cyan" 
+                    text="RESUME">
+               <font>
+                  <Font name="Consolas" size="18.0" />
+               </font>
+            </Button>
+            
+            <Button mnemonicParsing="false" onAction="#handleQuitToMenu" 
+                    prefHeight="50.0" prefWidth="200.0" 
+                    styleClass="pause-button-red" 
+                    text="SAVE &amp; QUIT">
+               <font>
+                  <Font name="Consolas" size="18.0" />
+               </font>
+            </Button>
+            
+         </children>
+      </VBox>
+
+   </children>
+</StackPane>
