@@ -5,79 +5,54 @@ import java.util.Random;
 public class ArenaModel {
     public static final int GRID_SIZE = 40;
     
-    // 0 = Empty, 1 = Wall/Obstacle, 2 = Jetwall, 3 = Speed Ramp
+    // 0 = Empty, 1 = Wall/Obstacle, 2 = Player Trail, 3 = Speed Ramp, 4 = Enemy Trail
     private int[][] grid = new int[GRID_SIZE][GRID_SIZE];
     
     private boolean isOpenType = false; 
     private boolean speedBoostActive = false;
 
     public ArenaModel() {
-        // Default constructor, actual loading happens in Controller
+        // Default constructor
     }
 
     // --- ARENA GENERATION LOGIC ---
 
-    // Arena 1: Basic Training (Levels 1-9)
     public void loadArena1() {
-        reset(false); // Closed Boundary
+        reset(false); 
         addOuterBoundaries(); 
-        // No obstacles, pure combat
     }
 
-    // Arena 2: The Accelerator (Levels 10-19)
     public void loadArena2() {
-        reset(false); // Closed Boundary
+        reset(false); 
         addOuterBoundaries();
-        
-        // Add Speed Ramps (Value 3) in a pattern
-        // Requirement: Speed ramp placement 
         for(int i=5; i<35; i+=5) {
             grid[i][10] = 3;
             grid[i][30] = 3;
         }
     }
 
-    // Arena 3: The Bunker (Levels 20-29)
     public void loadArena3() {
-        reset(false); // Closed Boundary
+        reset(false); 
         addOuterBoundaries();
-        
-        // Add Fixed Obstacles (Value 1) to create cover
-        // Requirement: Obstacle arrangement 
         for (int i = 10; i < 30; i++) {
-            grid[i][10] = 1; // Top horizontal wall
-            grid[i][30] = 1; // Bottom horizontal wall
+            grid[i][10] = 1; 
+            grid[i][30] = 1; 
         }
         for (int y = 15; y < 25; y++) {
-            grid[20][y] = 1; // Center vertical pillar
+            grid[20][y] = 1; 
         }
     }
 
-    // Arena 4: Procedural "Glitch" (Level 30+)
-    // Requirement: Random arena generator 
     public void loadRandomArena() {
-        reset(true); // OPEN BOUNDARY (Falling off = Death) [cite: 71]
-        
-        // We DO NOT add outer boundaries here.
-        
+        reset(true); // Open Type
         Random rand = new Random();
-        
-        // Generate random obstacles
-        int obstacleCount = 30 + rand.nextInt(20); // 30 to 50 obstacles
-        
+        int obstacleCount = 30 + rand.nextInt(20); 
         for (int i = 0; i < obstacleCount; i++) {
             int rx = rand.nextInt(GRID_SIZE);
             int ry = rand.nextInt(GRID_SIZE);
-            
-            // Safety Check: Don't spawn obstacles in the center (Player Spawn Zone)
             if (Math.abs(rx - 20) < 5 && Math.abs(ry - 20) < 5) continue;
-            
-            // Randomly decide: 80% Static Wall, 20% Speed Ramp
-            if (rand.nextDouble() > 0.8) {
-                grid[rx][ry] = 3;
-            } else {
-                grid[rx][ry] = 1;
-            }
+            if (rand.nextDouble() > 0.8) grid[rx][ry] = 3;
+            else grid[rx][ry] = 1;
         }
     }
 
@@ -98,14 +73,13 @@ public class ArenaModel {
     }
 
     public void processMove(GameCharacter c, int nextX, int nextY) {
-        // Logic remains the same as your original file
         int oldX = c.getX();
         int oldY = c.getY();
 
-        // 1. Check Falling Off (Open Grid Rule) [cite: 71]
+        // 1. Check Falling Off
         if (nextX < 0 || nextX >= GRID_SIZE || nextY < 0 || nextY >= GRID_SIZE) {
             if (isOpenType) {
-                c.reduceLives(100); // Instant Death
+                c.reduceLives(100); 
                 System.out.println(c.getName() + " fell off the grid!");
             }
             return; 
@@ -114,18 +88,19 @@ public class ArenaModel {
         // 2. Check Collision
         int targetCell = grid[nextX][nextY];
         
-        if (targetCell == 3) {
-            // Speed Ramp Logic: You might want to implement a temporary speed boost here
-             this.speedBoostActive = true; 
-        } else {
-             this.speedBoostActive = false;
-        }
+        if (targetCell == 3) this.speedBoostActive = true; 
+        else this.speedBoostActive = false;
 
-        if (targetCell == 1 || targetCell == 2) {
-            c.reduceLives(0.5); // Wall Collision
+        // Hit Wall (1), Player Trail (2), or Enemy Trail (4)
+        if (targetCell == 1 || targetCell == 2 || targetCell == 4) {
+            c.reduceLives(0.5); 
         } else {
-            // Valid Move
-            grid[oldX][oldY] = 2; // Leave jetwall
+            // Valid Move - Leave Trail
+            if (c instanceof Player) {
+                grid[oldX][oldY] = 2; // Player Trail
+            } else {
+                grid[oldX][oldY] = 4; // Enemy Trail
+            }
             c.setPosition(nextX, nextY);
         }
     }

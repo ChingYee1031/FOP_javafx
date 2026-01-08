@@ -5,6 +5,9 @@ public class Player extends GameCharacter {
     private int xp = 0;
     private int level = 1;
     private final int MAX_LEVEL = 99; 
+    
+    // --- NEW: Tutorial Flag ---
+    private boolean seenTutorial = false; 
 
     public Player(String name, String color, double lives, double speed) {
         super(name, color, lives, speed);
@@ -30,7 +33,6 @@ public class Player extends GameCharacter {
             xpNeeded = (level <= 10) ? level * 100 : level * 300;
         }
     }
-
 
     public void levelUp() {
         level++;
@@ -67,4 +69,8 @@ public class Player extends GameCharacter {
     public void setName(String name) { this.name = name; }
     public void setColor(String color) { this.color = color; }
     public void setSpeed(double speed) { this.speed = speed; }
+
+    // --- NEW: TUTORIAL METHODS ---
+    public boolean hasSeenTutorial() { return seenTutorial; }
+    public void setSeenTutorial(boolean seen) { this.seenTutorial = seen; }
 }
