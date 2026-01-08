@@ -1,6 +1,5 @@
 package fop.assignment;
 
-// These imports are crucial. If they are red, check pom.xml and reload Maven.
 import javafx.scene.media.AudioClip;
 import javafx.scene.media.Media;
 import javafx.scene.media.MediaPlayer;
@@ -41,5 +40,19 @@ public class SoundManager {
 
     public static void stopMusic() {
         if (backgroundPlayer != null) backgroundPlayer.stop();
+    }
+
+    // --- NEW METHODS FOR PAUSE/RESUME ---
+    
+    public static void pauseMusic() {
+        if (backgroundPlayer != null) {
+            backgroundPlayer.pause();
+        }
+    }
+
+    public static void resumeMusic() {
+        if (backgroundPlayer != null) {
+            backgroundPlayer.play();
+        }
     }
 }

@@ -70,8 +70,10 @@ public class ArenaController {
     private boolean gameOverTriggered = false;
     private boolean isPaused = false;
 
+    // --- MESSAGE SYSTEM ---
     private String gameMessage = ""; 
     private long messageTimer = 0;
+    private Color messageColor = Color.YELLOW; // Default Color
 
     @FXML
     public void initialize() {
@@ -86,6 +88,8 @@ public class ArenaController {
         draw();
         startTaskTimer();
         gameStarted = true; 
+        
+        // Start Background Music
         SoundManager.playMusic("bgm.mp3");
 
         gameCanvas.setFocusTraversable(true);
@@ -101,6 +105,10 @@ public class ArenaController {
     private void handlePauseButton() {
         if (gameOverTriggered) return; 
         isPaused = true;
+        
+        // PAUSE MUSIC
+        SoundManager.pauseMusic();
+        
         gameTimer.stop(); 
         pauseMenu.setVisible(true); 
     }
@@ -109,12 +117,19 @@ public class ArenaController {
     private void handleResume() {
         isPaused = false;
         pauseMenu.setVisible(false); 
+        
+        // RESUME MUSIC
+        SoundManager.resumeMusic();
+        
         gameTimer.start(); 
         gameCanvas.requestFocus(); 
     }
 
     @FXML
     private void handleQuitToMenu() {
+        // STOP MUSIC
+        SoundManager.stopMusic();
+
         if (App.globalPlayer != null && App.globalPassword != null) {
             App.globalPlayer.setLevel(player.getLevel());
             App.globalPlayer.setXP(player.getXP());
@@ -148,7 +163,6 @@ public class ArenaController {
         gameTimer.start(); 
     }   
 
-    // --- UPDATED METHOD ---
     private void updateSidebar() {
         if (player != null) {
             if (nameLabel != null) nameLabel.setText("CHARACTER: " + player.getName().toUpperCase());
@@ -199,6 +213,10 @@ public class ArenaController {
                 player.reduceLives(0.5); 
                 spawnFloatingText("-0.5 HP", player.getX(), player.getY(), Color.ORANGE);
                 currentDir = Direction.NONE; 
+                
+                // CRASH MESSAGE (RED)
+                showMessage("CRASHED!", Color.RED);
+
             } else {
                 playerTrail.add(new int[]{player.getX(), player.getY()});
                 model.processMove(player, nextX, nextY);
@@ -299,6 +317,10 @@ public class ArenaController {
         showMessage("DEFEATED " + e.getName());
         int newLevel = player.getLevel();
         if (newLevel > oldLevel) {
+            
+            // LEVEL UP MESSAGE (GREEN)
+            showMessage("LEVEL UP!", Color.GREEN);
+            
             SoundManager.playSound("levelup.wav");
             if (App.globalPlayer != null) {
                 App.globalPlayer.setLevel(newLevel);
@@ -312,7 +334,6 @@ public class ArenaController {
             }
         }
 
-        // JUST CLEANUP (No Wreckage Spawn)
         if (index < activeEnemies.size()) {
             Queue<int[]> deadTrail = enemyTrails.get(index);
             for (int[] pos : deadTrail) model.getGrid()[pos[0]][pos[1]] = 0; 
@@ -356,8 +377,9 @@ public class ArenaController {
         drawCharacter(gc, player);
         for (Enemy e : activeEnemies) drawCharacter(gc, e);
         
+        // DRAW MESSAGE WITH DYNAMIC COLOR
         if (!gameMessage.isEmpty() && (System.nanoTime() - messageTimer) < 2_000_000_000L) {
-            gc.setFill(Color.YELLOW);
+            gc.setFill(messageColor); 
             gc.setFont(Font.font("Verdana", FontWeight.BOLD, 20));
             double textWidthEstimate = 200; 
             double xPos = (gameCanvas.getWidth() / 2) - (textWidthEstimate / 2);
@@ -366,7 +388,7 @@ public class ArenaController {
         }
     }
 
-    // --- HELPER METHODS --- (Standard Logic)
+    // --- HELPER METHODS ---
 
     private void setupPlayer() {
         if (App.globalPlayer != null) {
@@ -402,7 +424,10 @@ public class ArenaController {
             App.globalPlayer.setXP(player.getXP());
             DataManager.savePlayer(App.globalPlayer, App.globalPassword);
         }
+        
+        // STOP MUSIC ON DEATH
         SoundManager.stopMusic();
+        
         SoundManager.playSound("gameover.wav");
         PauseTransition pause = new PauseTransition(Duration.seconds(2));
         pause.setOnFinished(event -> {
@@ -417,7 +442,10 @@ public class ArenaController {
         String endingChapter = "ending_hero"; 
         if (player.getName().equalsIgnoreCase("Kevin")) endingChapter = "ending_villain";
         showMessage("SYSTEM LIBERATED!");
+        
+        // STOP MUSIC ON WIN
         SoundManager.stopMusic();
+        
         SoundManager.playSound("win.wav"); 
         final String ch = endingChapter;
         PauseTransition pause = new PauseTransition(Duration.seconds(4));
@@ -430,6 +458,10 @@ public class ArenaController {
         if (gameTimer != null) gameTimer.stop();
         showMessage("ARENA UPGRADE UNLOCKED!");
         SoundManager.playSound("levelup.wav"); 
+        
+        // STOP MUSIC FOR TRANSITION (Optional, but safer)
+        SoundManager.stopMusic();
+        
         PauseTransition pause = new PauseTransition(Duration.seconds(2));
         pause.setOnFinished(ev -> { try { App.setRoot("Arena"); } catch (Exception ex) {} });
         pause.play();
@@ -455,6 +487,10 @@ public class ArenaController {
                     App.globalPlayer.setXP(player.getXP());
                     DataManager.savePlayer(App.globalPlayer, App.globalPassword);
                 }
+                
+                // STOP MUSIC FOR STORY
+                SoundManager.stopMusic();
+                
                 App.goToCutscene(nextChapter);
                 return true; 
             }
@@ -514,7 +550,8 @@ public class ArenaController {
                 player.useAmmo();   
                 discs.add(new Disc(player.getX(), player.getY(), lastFacingDir, player));
             } else {
-                System.out.println("NO DISC AMMO!"); 
+                // NO DISC MESSAGE (RED)
+                showMessage("NO DISC REMAIN!", Color.RED); 
             }
             return;
         }
@@ -550,9 +587,15 @@ public class ArenaController {
     }
 
     private void showMessage(String msg) {
+        showMessage(msg, Color.YELLOW); 
+    }
+
+    private void showMessage(String msg, Color color) {
         this.gameMessage = msg;
+        this.messageColor = color;
         this.messageTimer = System.nanoTime();
     }
+
     private void spawnFloatingText(String text, int gridX, int gridY, Color color) {
         floatingTexts.add(new FloatingText(text, gridX * CELL, gridY * CELL, color));
     }
