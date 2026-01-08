@@ -12,7 +12,6 @@ import javafx.animation.PauseTransition;
 import javafx.fxml.FXML;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
-
 import javafx.scene.control.Label;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
@@ -70,8 +69,10 @@ public class ArenaController {
     private boolean gameOverTriggered = false;
     private boolean isPaused = false;
 
+    // --- MESSAGE SYSTEM ---
     private String gameMessage = ""; 
     private long messageTimer = 0;
+    private Color messageColor = Color.YELLOW; 
 
     @FXML
     public void initialize() {
@@ -80,14 +81,19 @@ public class ArenaController {
 
         loadEnemiesToPool(); 
         setupPlayer();
+        
+        // --- MAP LOADING (Aligned with Story) ---
         loadLevelArena(); 
+        
         spawnNextEnemy();    
 
         draw();
         startTaskTimer();
         gameStarted = true; 
+        
         SoundManager.playMusic("bgm.mp3");
 
+        // Focus Handling to ensure Keyboard works immediately
         gameCanvas.setFocusTraversable(true);
         javafx.application.Platform.runLater(() -> {
             gameCanvas.requestFocus();
@@ -95,12 +101,83 @@ public class ArenaController {
                 gameCanvas.getScene().setOnKeyPressed(this::handleKeyPress);
             }
         });
+        
+        gameCanvas.sceneProperty().addListener((obs, oldScene, newScene) -> {
+            if (newScene != null) {
+                newScene.setOnKeyPressed(this::handleKeyPress);
+            }
+        });
     }
     
+// --- MAP LOADING LOGIC ---
+    private void loadLevelArena() {
+        int level = player.getLevel();
+        
+        // Level 1-9: Arena 1
+        if (level < 10) {
+            model.loadArena1(); 
+            showMessage("ARENA 1: THE GRID");
+        } 
+        // Level 10-19: Arena 2
+        else if (level < 20) {
+            model.loadArena2(); 
+            showMessage("ARENA 2: ACCELERATION");
+        } 
+        // Level 20-29: Arena 3 (Easier Version)
+        else if (level < 30) {
+            model.loadArena3(); 
+            showMessage("ARENA 3: THE BUNKER");
+        } 
+        // Level 30+: Arena 4 (Scales with Level)
+        else {
+            // PASS THE LEVEL HERE
+            model.loadRandomArena(level); 
+            showMessage("ARENA 4: UNSTABLE GRID", Color.RED);
+        }
+    }
+
+    // --- STORY TRIGGERS (Matched to Arena Boundaries) ---
+    private boolean checkStoryProgression(int level) {
+        try {
+            String nextChapter = null;
+            
+            // Triggers exactly when entering a new Arena Tier
+            if (level == 10)      nextChapter = "chapter2"; 
+            else if (level == 20) nextChapter = "chapter3"; 
+            else if (level == 30) nextChapter = "chapter4"; 
+            
+            // Further progression
+            else if (level == 40) nextChapter = "chapter5"; 
+            else if (level == 50) nextChapter = "chapter6"; 
+            else if (level == 60) nextChapter = "chapter7"; 
+            else if (level == 70) nextChapter = "chapter8"; 
+            else if (level == 80) nextChapter = "chapter9"; 
+            else if (level == 90) nextChapter = "chapter10"; 
+            
+            if (nextChapter != null) {
+                gameStarted = false;
+                if (gameTimer != null) gameTimer.stop(); 
+                
+                // Save before cutscene
+                if (App.globalPlayer != null && App.globalPassword != null) {
+                    App.globalPlayer.setLevel(player.getLevel());
+                    App.globalPlayer.setXP(player.getXP());
+                    DataManager.savePlayer(App.globalPlayer, App.globalPassword);
+                }
+                
+                SoundManager.stopMusic();
+                App.goToCutscene(nextChapter);
+                return true; 
+            }
+        } catch (Exception ex) { ex.printStackTrace(); }
+        return false; 
+    }
+
     @FXML
     private void handlePauseButton() {
         if (gameOverTriggered) return; 
         isPaused = true;
+        SoundManager.pauseMusic();
         gameTimer.stop(); 
         pauseMenu.setVisible(true); 
     }
@@ -109,22 +186,20 @@ public class ArenaController {
     private void handleResume() {
         isPaused = false;
         pauseMenu.setVisible(false); 
+        SoundManager.resumeMusic();
         gameTimer.start(); 
         gameCanvas.requestFocus(); 
     }
 
     @FXML
     private void handleQuitToMenu() {
+        SoundManager.stopMusic();
         if (App.globalPlayer != null && App.globalPassword != null) {
             App.globalPlayer.setLevel(player.getLevel());
             App.globalPlayer.setXP(player.getXP());
             DataManager.savePlayer(App.globalPlayer, App.globalPassword);
         }
-        try {
-            App.setRoot("MenuPage");
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+        try { App.setRoot("MenuPage"); } catch (Exception e) {}
     }
 
     private void startTaskTimer() {
@@ -132,7 +207,6 @@ public class ArenaController {
             @Override
             public void handle(long now) {
                 if (isPaused) return; 
-
                 if (!gameOverTriggered) {
                     long currentDelay = model.isSpeedBoostActive() ? speedNanos / 2 : speedNanos;
                     if (now - lastUpdate >= currentDelay) {
@@ -148,7 +222,6 @@ public class ArenaController {
         gameTimer.start(); 
     }   
 
-    // --- UPDATED METHOD ---
     private void updateSidebar() {
         if (player != null) {
             if (nameLabel != null) nameLabel.setText("CHARACTER: " + player.getName().toUpperCase());
@@ -186,19 +259,31 @@ public class ArenaController {
         }
 
         if (currentDir != Direction.NONE) {
+            // BOUNDS CHECK
             if (nextX < 0 || nextX >= COLS || nextY < 0 || nextY >= ROWS) {
-                SoundManager.playSound("fall.wav"); 
-                player.reduceLives(player.getLives()); 
-                triggerGameOverSequence();
-                return;
+                if(model.isOpenType()) {
+                    SoundManager.playSound("fall.wav"); 
+                    player.reduceLives(100); 
+                    triggerGameOverSequence();
+                    return;
+                } else {
+                    SoundManager.playSound("crash.wav");
+                    player.reduceLives(0.5); 
+                    spawnFloatingText("-0.5 HP", player.getX(), player.getY(), Color.ORANGE);
+                    currentDir = Direction.NONE; 
+                    showMessage("CRASHED!", Color.RED);
+                    return; // Stop here, don't update position
+                }
             }
 
             int nextCell = model.getGrid()[nextX][nextY];
+            // COLLISION CHECK
             if (nextCell == 1 || nextCell == 2 || nextCell == 4) {
                 SoundManager.playSound("crash.wav");
                 player.reduceLives(0.5); 
                 spawnFloatingText("-0.5 HP", player.getX(), player.getY(), Color.ORANGE);
                 currentDir = Direction.NONE; 
+                showMessage("CRASHED!", Color.RED);
             } else {
                 playerTrail.add(new int[]{player.getX(), player.getY()});
                 model.processMove(player, nextX, nextY);
@@ -209,6 +294,7 @@ public class ArenaController {
             }
         }
 
+        // UPDATE DISCS
         for (int i = 0; i < discs.size(); i++) {
             Disc d = discs.get(i);
             d.update(model.getGrid()); 
@@ -240,12 +326,10 @@ public class ArenaController {
                     }
                 }
             }
-            if (!d.isActive()) {
-                discs.remove(i);
-                i--;
-            }
+            if (!d.isActive()) { discs.remove(i); i--; }
         }
 
+        // UPDATE ENEMIES
         while (enemyTrails.size() < activeEnemies.size()) enemyTrails.add(new LinkedList<>());
         for (int i = 0; i < activeEnemies.size(); i++) {
             Enemy e = activeEnemies.get(i);
@@ -256,28 +340,33 @@ public class ArenaController {
                 i--; continue;
             }
             
+            // --- FIX: HEAD-ON COLLISION CHECK ---
+            // If enemy is on top of player, both crash
+            if (e.getX() == player.getX() && e.getY() == player.getY()) {
+                 SoundManager.playSound("crash.wav");
+                 e.reduceLives(100);       // Kill Enemy
+                 player.reduceLives(100);  // Kill Player
+                 triggerGameOverSequence();
+                 return; // End loop
+            }
+
             if (e.canShoot()) {
-                boolean shoot = false;
-                int shotDir = -1;
+                boolean shoot = false; int shotDir = -1;
                 if (e.getX() == player.getX()) {
                     int dist = player.getY() - e.getY();
-                    if (dist > 0 && dist < 10) { shotDir = 1; shoot = true; }
-                    else if (dist < 0 && dist > -10) { shotDir = 0; shoot = true; }
+                    if (dist > 0 && dist < 15) { shotDir = 1; shoot = true; } 
+                    else if (dist < 0 && dist > -15) { shotDir = 0; shoot = true; } 
                 }
                 else if (e.getY() == player.getY()) {
                     int dist = player.getX() - e.getX();
-                    if (dist > 0 && dist < 10) { shotDir = 3; shoot = true; }
-                    else if (dist < 0 && dist > -10) { shotDir = 2; shoot = true; }
+                    if (dist > 0 && dist < 15) { shotDir = 3; shoot = true; } 
+                    else if (dist < 0 && dist > -15) { shotDir = 2; shoot = true; } 
                 }
-                if (shoot) {
-                    e.useAmmo(); 
-                    discs.add(new Disc(e.getX(), e.getY(), shotDir, e));
-                }
+                if (shoot) { e.useAmmo(); discs.add(new Disc(e.getX(), e.getY(), shotDir, e)); }
             }
             
             int moveDir = e.makeMove(model.getGrid());
-            int ex = e.getX();
-            int ey = e.getY();
+            int ex = e.getX(); int ey = e.getY();
             if (moveDir == 0) ey--; else if (moveDir == 1) ey++; 
             else if (moveDir == 2) ex--; else if (moveDir == 3) ex++; 
 
@@ -298,21 +387,22 @@ public class ArenaController {
         spawnFloatingText("+" + e.getXPReward() + " XP", player.getX(), player.getY(), Color.GOLD);
         showMessage("DEFEATED " + e.getName());
         int newLevel = player.getLevel();
+        
         if (newLevel > oldLevel) {
+            showMessage("LEVEL UP!", Color.GREEN);
             SoundManager.playSound("levelup.wav");
+            
             if (App.globalPlayer != null) {
                 App.globalPlayer.setLevel(newLevel);
                 App.globalPlayer.setXP(player.getXP());
                 DataManager.savePlayer(App.globalPlayer, App.globalPassword);
             }
+            
             if (newLevel >= 99) { triggerGameWinSequence(); return; }
-            boolean storyTriggered = checkStoryProgression(newLevel);
-            if (!storyTriggered && (newLevel == 20 || newLevel == 30)) {
-                triggerArenaUpgradeSequence(newLevel);
-            }
+            
+            checkStoryProgression(newLevel);
         }
 
-        // JUST CLEANUP (No Wreckage Spawn)
         if (index < activeEnemies.size()) {
             Queue<int[]> deadTrail = enemyTrails.get(index);
             for (int[] pos : deadTrail) model.getGrid()[pos[0]][pos[1]] = 0; 
@@ -321,15 +411,20 @@ public class ArenaController {
         }
     }
 
-    private void draw() {
+private void draw() {
         GraphicsContext gc = gameCanvas.getGraphicsContext2D();
+        
+        // 1. CLEAR SCREEN
         gc.setFill(Color.BLACK);
         gc.fillRect(0, 0, gameCanvas.getWidth(), gameCanvas.getHeight());
+        
+        // 2. DRAW GRID LINES
         gc.setStroke(Color.web("#222222"));
         gc.setLineWidth(1);
         for(int x = 0; x <= COLS; x++) gc.strokeLine(x * CELL, 0, x * CELL, ROWS * CELL);
         for(int y = 0; y <= ROWS; y++) gc.strokeLine(0, y * CELL, COLS * CELL, y * CELL);
 
+        // 3. DRAW GRID OBJECTS
         int[][] grid = model.getGrid();
         for (int x = 0; x < COLS; x++) {
             for (int y = 0; y < ROWS; y++) {
@@ -337,36 +432,51 @@ public class ArenaController {
                     gc.setFill(Color.web("#333333")); 
                     gc.fillRect(x*CELL, y*CELL, CELL-1, CELL-1); 
                 } 
+                else if (grid[x][y] == 3) { 
+                    gc.setFill(Color.web("#FFFF00", 0.5)); 
+                    gc.fillRect(x*CELL, y*CELL, CELL-1, CELL-1); 
+                }
                 else if (grid[x][y] == 2) { 
-                    gc.setFill(Color.web("#00FFFF", 0.3)); 
-                    gc.fillRect(x*CELL - 2, y*CELL - 2, CELL+4, CELL+4);
-                    gc.setFill(Color.web("#00FFFF")); 
+                    gc.setFill(Color.web(player.getColor())); 
                     gc.fillRect(x*CELL, y*CELL, CELL-1, CELL-1); 
                 } 
                 else if (grid[x][y] == 4) {
-                    gc.setFill(Color.web("#FF0000", 0.3)); 
-                    gc.fillRect(x*CELL - 2, y*CELL - 2, CELL+4, CELL+4);
                     gc.setFill(Color.RED); 
                     gc.fillRect(x*CELL, y*CELL, CELL-1, CELL-1); 
                 }
             }
         }
 
+        // 4. DRAW ENTITIES
         for (Disc d : discs) d.draw(gc, CELL);
         drawCharacter(gc, player);
         for (Enemy e : activeEnemies) drawCharacter(gc, e);
         
+        // 5. DRAW HUD MESSAGE (Top-Center, Original Size)
         if (!gameMessage.isEmpty() && (System.nanoTime() - messageTimer) < 2_000_000_000L) {
-            gc.setFill(Color.YELLOW);
+            gc.save(); // Save state
+            
+            // Set Alignment to Center so we don't have to guess the X coordinate
+            gc.setTextAlign(javafx.scene.text.TextAlignment.CENTER);
+            gc.setTextBaseline(javafx.geometry.VPos.TOP); // Draw from top down
+            
+            // Original Size (20)
             gc.setFont(Font.font("Verdana", FontWeight.BOLD, 20));
-            double textWidthEstimate = 200; 
-            double xPos = (gameCanvas.getWidth() / 2) - (textWidthEstimate / 2);
-            double yPos = 60; 
-            gc.fillText(gameMessage, xPos, yPos);
+            
+            double centerX = gameCanvas.getWidth() / 2;
+            double topY = 60; // Fixed at the top
+            
+            // Optional: Slight black shadow for readability
+            gc.setFill(Color.BLACK);
+            gc.fillText(gameMessage, centerX + 2, topY + 2);
+
+            // Main Text Color
+            gc.setFill(messageColor);
+            gc.fillText(gameMessage, centerX, topY);
+            
+            gc.restore(); // Restore state
         }
     }
-
-    // --- HELPER METHODS --- (Standard Logic)
 
     private void setupPlayer() {
         if (App.globalPlayer != null) {
@@ -374,9 +484,9 @@ public class ArenaController {
         } else {
             this.player = new Player("Tron", "#00FFFF", 3.0, 1.5);
         }
+        player.setLives(player.getLives() <= 0 ? 3 : player.getLives()); 
         int startX = 20; int startY = 20;
         player.setPosition(startX, startY);
-        player.setLives(player.getLives() <= 0 ? 3 : player.getLives()); 
         for (int i = startX - 2; i <= startX + 2; i++) {
             for (int j = startY - 2; j <= startY + 2; j++) {
                 if (i >= 0 && i < COLS && j >= 0 && j < ROWS) {
@@ -386,17 +496,8 @@ public class ArenaController {
         }
     }
 
-    private void loadLevelArena() {
-        int level = player.getLevel();
-        if (level < 10) model.loadArena1();
-        else if (level < 20) model.loadArena2();
-        else if (level < 30) model.loadArena3();
-        else model.loadRandomArena();
-    }
-
     private void triggerGameOverSequence() {
-        gameOverTriggered = true;
-        gameStarted = false; 
+        gameOverTriggered = true; gameStarted = false; 
         if (App.globalPlayer != null && App.globalPassword != null) {
             App.globalPlayer.setLevel(player.getLevel());
             App.globalPlayer.setXP(player.getXP());
@@ -405,15 +506,12 @@ public class ArenaController {
         SoundManager.stopMusic();
         SoundManager.playSound("gameover.wav");
         PauseTransition pause = new PauseTransition(Duration.seconds(2));
-        pause.setOnFinished(event -> {
-            try { App.setRoot("GameOverPage"); } catch (Exception e) {}
-        });
+        pause.setOnFinished(event -> { try { App.setRoot("GameOverPage"); } catch (Exception e) {} });
         pause.play();
     }
 
     private void triggerGameWinSequence() {
-        gameStarted = false;
-        if (gameTimer != null) gameTimer.stop();
+        gameStarted = false; if (gameTimer != null) gameTimer.stop();
         String endingChapter = "ending_hero"; 
         if (player.getName().equalsIgnoreCase("Kevin")) endingChapter = "ending_villain";
         showMessage("SYSTEM LIBERATED!");
@@ -423,43 +521,6 @@ public class ArenaController {
         PauseTransition pause = new PauseTransition(Duration.seconds(4));
         pause.setOnFinished(ev -> { try { App.goToCutscene(ch); } catch (Exception ex) {} });
         pause.play();
-    }
-
-    private void triggerArenaUpgradeSequence(int level) {
-        gameStarted = false; 
-        if (gameTimer != null) gameTimer.stop();
-        showMessage("ARENA UPGRADE UNLOCKED!");
-        SoundManager.playSound("levelup.wav"); 
-        PauseTransition pause = new PauseTransition(Duration.seconds(2));
-        pause.setOnFinished(ev -> { try { App.setRoot("Arena"); } catch (Exception ex) {} });
-        pause.play();
-    }
-
-    private boolean checkStoryProgression(int level) {
-        try {
-            String nextChapter = null;
-            if (level == 10)      nextChapter = "chapter2"; 
-            else if (level == 19) nextChapter = "chapter3"; 
-            else if (level == 28) nextChapter = "chapter4"; 
-            else if (level == 37) nextChapter = "chapter5"; 
-            else if (level == 46) nextChapter = "chapter6"; 
-            else if (level == 55) nextChapter = "chapter7"; 
-            else if (level == 64) nextChapter = "chapter8"; 
-            else if (level == 73) nextChapter = "chapter9"; 
-            else if (level == 82) nextChapter = "chapter10"; 
-            if (nextChapter != null) {
-                gameStarted = false;
-                if (gameTimer != null) gameTimer.stop(); 
-                if (App.globalPlayer != null && App.globalPassword != null) {
-                    App.globalPlayer.setLevel(player.getLevel());
-                    App.globalPlayer.setXP(player.getXP());
-                    DataManager.savePlayer(App.globalPlayer, App.globalPassword);
-                }
-                App.goToCutscene(nextChapter);
-                return true; 
-            }
-        } catch (Exception ex) { ex.printStackTrace(); }
-        return false; 
     }
 
     private int getMaxEnemiesForLevel() {
@@ -507,15 +568,12 @@ public class ArenaController {
     @FXML
     public void handleKeyPress(KeyEvent event) {
         if (!gameStarted || gameOverTriggered || isPaused) return; 
-        
         if (event.getCode() == KeyCode.SPACE) {
             if (player.hasAmmo()) { 
                 SoundManager.playSound("shoot.wav");
                 player.useAmmo();   
                 discs.add(new Disc(player.getX(), player.getY(), lastFacingDir, player));
-            } else {
-                System.out.println("NO DISC AMMO!"); 
-            }
+            } else { showMessage("NO DISC REMAIN!", Color.RED); }
             return;
         }
         switch (event.getCode()) {
@@ -523,7 +581,7 @@ public class ArenaController {
             case S: if (currentDir != Direction.UP)   bufferedDir = Direction.DOWN; break;
             case A: if (currentDir != Direction.RIGHT) bufferedDir = Direction.LEFT; break;
             case D: if (currentDir != Direction.LEFT)  bufferedDir = Direction.RIGHT; break;
-            case L: // CHEAT
+            case L: 
                 int oldCheatLevel = player.getLevel();
                 player.addXP(5000); 
                 System.out.println("CHEAT: Level is now " + player.getLevel());
@@ -549,9 +607,9 @@ public class ArenaController {
         }
     }
 
-    private void showMessage(String msg) {
-        this.gameMessage = msg;
-        this.messageTimer = System.nanoTime();
+    private void showMessage(String msg) { showMessage(msg, Color.YELLOW); }
+    private void showMessage(String msg, Color color) {
+        this.gameMessage = msg; this.messageColor = color; this.messageTimer = System.nanoTime();
     }
     private void spawnFloatingText(String text, int gridX, int gridY, Color color) {
         floatingTexts.add(new FloatingText(text, gridX * CELL, gridY * CELL, color));
@@ -565,8 +623,7 @@ public class ArenaController {
             gc.setFill(ft.color);
             gc.setGlobalAlpha(ft.life); 
             gc.fillText(ft.text, ft.x, ft.y);
-            ft.y -= 0.5; 
-            ft.life -= 0.02; 
+            ft.y -= 0.5; ft.life -= 0.02; 
             if (ft.life <= 0) it.remove();
         }
         gc.setGlobalAlpha(1.0); 
