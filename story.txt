@@ -86,8 +86,6 @@ chapter10.scene2: "I did exactly what you programmed me to do!"
 chapter10.scene3: The final battle for the future of the Grid begins.
 chapter10.scene4: Make your choice, Program.
 
-# HERO ENDING (Tron's Path)
-ending_hero.scene1: The Grid is rebooted. The sun rises over a free system.
-
-# VILLAIN ENDING (Kevin's/Dark Path)
-ending_villain.scene1: You sit upon the throne. Perfection is absolute.
+# ---------- ENDING OUTCOMES (Used by EndingPage.java) ----------
+ending.tron: UNAUTHORIZED ACCESS TERMINATED. THE GRID IS SAFE ONCE MORE.
+ending.kevin: SYSTEM LIBERATED. THE CREATOR RETURNS.
