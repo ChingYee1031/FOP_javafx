@@ -200,6 +200,7 @@
     -fx-background-color: #000000; /* Solid Black on Hover */
     -fx-effect: dropshadow(three-pass-box, #FF0000, 20, 0.8, 0, 0);
 }
+
 /* =============================================================================
    PAUSE MENU BUTTONS (Transparent -> Solid Black & Glow on Hover)
    ============================================================================= */
@@ -210,7 +211,6 @@
     -fx-border-color: #00ffff;
     -fx-border-width: 2px;
     -fx-text-fill: #00ffff; /* Cyan Text */
-    /* Ensure white text becomes Cyan if you want consistency, or keep white */
     -fx-font-family: "Consolas", monospace;
     -fx-font-weight: bold;
     -fx-font-size: 16px;
@@ -239,4 +239,48 @@
 .pause-button-red:hover {
     -fx-background-color: #000000; /* Solid Black */
     -fx-effect: dropshadow(three-pass-box, #FF0000, 20, 0.6, 0, 0); /* Red Glow */
+}
+
+/* =============================================================================
+   6. ENDING PAGE BUTTONS (Specific Neon Glows) - NEW ADDITION
+   ============================================================================= */
+
+/* TRON BUTTON (Blue/Cyan Neon) */
+.button-tron {
+    -fx-background-color: black;
+    -fx-text-fill: #00FFFF;              /* Cyan Text */
+    -fx-border-color: #00FFFF;           /* Cyan Border */
+    -fx-border-width: 3px;
+    -fx-background-radius: 10;
+    -fx-border-radius: 10;
+    -fx-cursor: hand;
+    -fx-font-family: "OCR A Extended";   /* Specific font for ending */
+    -fx-font-size: 30px;
+    -fx-transition: all 0.3s ease;
+}
+
+.button-tron:hover {
+    /* Glow: Color=#00FFFF, Radius=30, Spread=0.6 */
+    -fx-effect: dropshadow(gaussian, #00FFFF, 30, 0.6, 0, 0);
+    -fx-background-color: #002222;       /* Slight blue tint inside on hover */
+}
+
+/* KEVIN BUTTON (White Neon) */
+.button-kevin {
+    -fx-background-color: black;
+    -fx-text-fill: #FFFFFF;              /* White Text */
+    -fx-border-color: #FFFFFF;           /* White Border */
+    -fx-border-width: 3px;
+    -fx-background-radius: 10;
+    -fx-border-radius: 10;
+    -fx-cursor: hand;
+    -fx-font-family: "OCR A Extended";   /* Specific font for ending */
+    -fx-font-size: 30px;
+    -fx-transition: all 0.3s ease;
+}
+
+.button-kevin:hover {
+    /* Glow: Color=#FFFFFF, Radius=30, Spread=0.6 */
+    -fx-effect: dropshadow(gaussian, #FFFFFF, 30, 0.6, 0, 0);
+    -fx-background-color: #222222;       /* Slight grey tint inside on hover */
 }

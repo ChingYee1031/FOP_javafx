@@ -93,25 +93,14 @@ public class CutscenePage {
 
     private void enterGame() {
         try {
-            // --- FIX: ENDING LOGIC ---
-            if (currentChapter.startsWith("ending")) {
-                System.out.println("Game Completed. Returning to Main Menu.");
-                
-                // 1. Keep the player logged in (Removed: App.globalPlayer = null)
-                
-                // 2. Go to Menu Page instead of Start Page
-                App.setRoot("MenuPage"); 
-            } 
-            else {
-                // Normal Chapter -> Continue Playing
-                System.out.println("End of Chapter. Entering Game Arena...");
-                App.setRoot("Arena");
-            }
+            // Chapter 10 sends player back to Arena to fight the final battle
+            System.out.println("End of Cutscene. Entering Game Arena...");
+            App.setRoot("Arena");
+            
         } catch (IOException e) {
             e.printStackTrace();
         }
     }
-
     private void loadStoryFromFile() {
         try {
             File file = new File("story.txt"); 
