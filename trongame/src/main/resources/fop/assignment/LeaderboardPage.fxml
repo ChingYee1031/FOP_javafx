@@ -10,7 +10,11 @@
 <?import javafx.scene.layout.StackPane?>
 <?import javafx.scene.layout.VBox?>
 
-<StackPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="720.0" prefWidth="1280.0" stylesheets="@style.css" xmlns="http://javafx.com/javafx/13" xmlns:fx="http://javafx.com/fxml/1" fx:controller="fop.assignment.LeaderboardPage">
+<StackPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" 
+           prefHeight="720.0" prefWidth="1280.0" 
+           stylesheets="@style.css" 
+           xmlns="http://javafx.com/javafx/13" xmlns:fx="http://javafx.com/fxml/1" 
+           fx:controller="fop.assignment.LeaderboardPage">
    <children>
       <ImageView fitHeight="720.0" fitWidth="1280.0" pickOnBounds="true" preserveRatio="false">
          <image>
@@ -37,10 +41,14 @@
                </columnResizePolicy>
             </TableView>
             
-            <Button fx:id="backButton" mnemonicParsing="false" onAction="#handleBack" styleClass="tron-button" text="BACK TO MENU">
+            <Button fx:id="backButton" mnemonicParsing="false" onAction="#handleBack" 
+                    styleClass="tron-button-back" 
+                    text="BACK TO MENU">
                <VBox.margin>
                   <Insets />
-               </VBox.margin></Button>
+               </VBox.margin>
+            </Button>
+            
          </children>
       </VBox>
    </children>

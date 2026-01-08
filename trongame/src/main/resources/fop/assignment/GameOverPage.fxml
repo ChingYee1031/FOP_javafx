@@ -5,8 +5,14 @@
 <?import javafx.scene.control.Label?>
 <?import javafx.scene.layout.VBox?>
 <?import javafx.scene.text.Font?>
+<?import javafx.scene.Cursor?>
 
-<VBox alignment="CENTER" prefHeight="600.0" prefWidth="800.0" spacing="30.0" style="-fx-background-color: black;" xmlns="http://javafx.com/javafx/13" xmlns:fx="http://javafx.com/fxml/1" fx:controller="fop.assignment.GameOverController">
+<VBox alignment="CENTER" prefHeight="600.0" prefWidth="800.0" spacing="30.0" 
+      style="-fx-background-color: black;" 
+      stylesheets="@style.css"
+      xmlns="http://javafx.com/javafx/13" xmlns:fx="http://javafx.com/fxml/1" 
+      fx:controller="fop.assignment.GameOverController">
+   
    <children>
       <Label text="GAME OVER" textFill="RED">
          <font>
@@ -20,16 +26,11 @@
       </Label>
       <VBox alignment="CENTER" spacing="15.0">
          <children>
-            <Button mnemonicParsing="false" onAction="#handleReturnToMenu" prefHeight="40.0" prefWidth="200.0" style="-fx-background-color: #00FFFF; -fx-text-fill: black; -fx-font-weight: bold;" text="RETURN TO MENU">
-               <font>
-                  <Font size="16.0" />
-               </font>
-               <cursor>
-                  <?import javafx.scene.Cursor?>
-                  <Cursor fx:constant="HAND" />
-               </cursor>
-            </Button>
-            <Button mnemonicParsing="false" onAction="#handleExit" prefHeight="40.0" prefWidth="200.0" style="-fx-background-color: #FF0000; -fx-text-fill: white; -fx-font-weight: bold;" text="EXIT GAME">
+            
+            <Button mnemonicParsing="false" onAction="#handleReturnToMenu" 
+                    prefHeight="40.0" prefWidth="200.0" 
+                    styleClass="return-button" 
+                    text="RETURN TO MENU">
                <font>
                   <Font size="16.0" />
                </font>
@@ -37,6 +38,19 @@
                   <Cursor fx:constant="HAND" />
                </cursor>
             </Button>
+            
+            <Button mnemonicParsing="false" onAction="#handleExit" 
+                    prefHeight="40.0" prefWidth="200.0" 
+                    styleClass="exit-button" 
+                    text="EXIT GAME">
+               <font>
+                  <Font size="16.0" />
+               </font>
+               <cursor>
+                  <Cursor fx:constant="HAND" />
+               </cursor>
+            </Button>
+            
          </children>
          <VBox.margin>
             <Insets top="20.0" />

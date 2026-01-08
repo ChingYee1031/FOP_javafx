@@ -9,9 +9,15 @@
 <?import javafx.scene.layout.VBox?>
 <?import javafx.scene.text.Font?>
 
-<StackPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="720.0" prefWidth="1280.0" style="-fx-background-color: black;" xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1" fx:controller="fop.assignment.MenuPage">
+<StackPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" 
+           prefHeight="720.0" prefWidth="1280.0" 
+           style="-fx-background-color: black;" 
+           stylesheets="@style.css"
+           xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1" 
+           fx:controller="fop.assignment.MenuPage">
+   
    <children>
-      <ImageView fitHeight="720.0" fitWidth="1280.0" focusTraversable="true" pickOnBounds="true" opacity="0.6">
+      <ImageView fitHeight="720.0" fitWidth="1280.0" focusTraversable="true" opacity="0.6" pickOnBounds="true">
          <image>
             <Image url="@tron_background.png" />
          </image>
@@ -19,36 +25,48 @@
       
       <VBox alignment="CENTER" spacing="25.0">
          <children>
-            <Label text="TRON: LEGACY" textFill="CYAN">
+            <Label text="TRON GAME" textFill="CYAN">
                <font>
-                  <Font name="Arial Bold" size="50.0" />
+                  <Font name="OCR A Extended" size="50.0" />
                </font>
                <VBox.margin>
                   <Insets bottom="30.0" />
                </VBox.margin>
             </Label>
 
-            <Button fx:id="startNewGameButton" mnemonicParsing="false" onAction="#handleStartNewGame" prefHeight="60.0" prefWidth="300.0" style="-fx-background-color: black; -fx-border-color: cyan; -fx-text-fill: cyan;" text="START NEW GAME">
+            <Button fx:id="startNewGameButton" mnemonicParsing="false" onAction="#handleStartNewGame" 
+                    prefHeight="60.0" prefWidth="300.0" 
+                    styleClass="menu-button-cyan" 
+                    text="START NEW GAME">
                <font>
-                  <Font name="Arial Bold" size="18.0" />
+                  <Font name="OCR A Extended" size="24.0" />
                </font>
             </Button>
 
-            <Button fx:id="continueGameButton" mnemonicParsing="false" onAction="#handleContinueGame" prefHeight="60.0" prefWidth="300.0" style="-fx-background-color: black; -fx-border-color: cyan; -fx-text-fill: cyan;" text="CONTINUE GAME">
+            <Button fx:id="continueGameButton" mnemonicParsing="false" onAction="#handleContinueGame" 
+                    prefHeight="60.0" prefWidth="300.0" 
+                    styleClass="menu-button-cyan" 
+                    text="CONTINUE GAME">
                <font>
-                  <Font name="Arial Bold" size="18.0" />
+                  <Font name="OCR A Extended" size="24.0" />
                </font>
             </Button>
 
-            <Button fx:id="leaderboardButton" mnemonicParsing="false" onAction="#handleLeaderboard" prefHeight="60.0" prefWidth="300.0" style="-fx-background-color: black; -fx-border-color: gold; -fx-text-fill: gold;" text="LEADERBOARD">
+            <Button fx:id="leaderboardButton" mnemonicParsing="false" onAction="#handleLeaderboard" 
+                    prefHeight="60.0" prefWidth="300.0" 
+                    styleClass="menu-button-yellow" 
+                    text="LEADERBOARD">
                <font>
-                  <Font name="Arial Bold" size="18.0" />
+                  <Font name="OCR A Extended" size="24.0" />
                </font>
             </Button>
 
-            <Button fx:id="exitGameButton" mnemonicParsing="false" onAction="#handleExit" prefHeight="60.0" prefWidth="300.0" style="-fx-background-color: black; -fx-border-color: red; -fx-text-fill: red;" text="EXIT GAME">
+            <Button fx:id="exitGameButton" mnemonicParsing="false" onAction="#handleExit" 
+                    prefHeight="60.0" prefWidth="300.0" 
+                    styleClass="menu-button-red" 
+                    text="EXIT GAME">
                <font>
-                  <Font name="Arial Bold" size="18.0" />
+                  <Font name="OCR A Extended" size="24.0" />
                </font>
             </Button>
          </children>
@@ -68,13 +86,19 @@
                </font>
             </Label>
             
-            <Button mnemonicParsing="false" onAction="#handleConfirmReset" prefHeight="50.0" prefWidth="300.0" style="-fx-background-color: black; -fx-border-color: red; -fx-text-fill: red;" text="YES, RESET &amp; START">
+            <Button mnemonicParsing="false" onAction="#handleConfirmReset" 
+                    prefHeight="50.0" prefWidth="300.0" 
+                    styleClass="menu-button-red" 
+                    text="YES, RESET &amp; START">
                <font>
-                  <Font name="Consolas Bold" size="18.0" />
+                  <Font name="OCR A Extended" size="18.0" />
                </font>
             </Button>
             
-            <Button mnemonicParsing="false" onAction="#handleCancelReset" prefHeight="50.0" prefWidth="300.0" style="-fx-background-color: black; -fx-border-color: cyan; -fx-text-fill: cyan;" text="NO, GO BACK">
+            <Button mnemonicParsing="false" onAction="#handleCancelReset" 
+                    prefHeight="50.0" prefWidth="300.0" 
+                    styleClass="menu-button-cyan" 
+                    text="NO, GO BACK">
                <font>
                   <Font name="Consolas Bold" size="18.0" />
                </font>

@@ -10,7 +10,11 @@
 <?import javafx.scene.layout.VBox?>
 <?import javafx.scene.text.Font?>
 
-<StackPane fx:id="rootPane" prefHeight="720.0" prefWidth="1280.0" style="-fx-background-color: black;" xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1" fx:controller="fop.assignment.ArenaController">
+<StackPane fx:id="rootPane" prefHeight="720.0" prefWidth="1280.0" 
+           style="-fx-background-color: black;" 
+           stylesheets="@style.css"
+           xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1" 
+           fx:controller="fop.assignment.ArenaController">
    <children>
       
       <ImageView fitHeight="720.0" fitWidth="1280.0" pickOnBounds="true" preserveRatio="false">
@@ -26,31 +30,26 @@
             <Insets left="30.0" right="10.0" top="30.0" />
          </padding>
          <children>
-            
             <Label fx:id="nameLabel" text="CHARACTER: TRON" textFill="WHITE">
                <font>
                   <Font name="Consolas Bold" size="16.0" />
                </font>
             </Label>
-            
             <Label fx:id="levelLabel" text="LEVEL: 1" textFill="WHITE">
                <font>
                   <Font name="Consolas Bold" size="16.0" />
                </font>
             </Label>
-            
             <Label fx:id="xpLabel" text="XP: 0" textFill="GOLD">
                <font>
                   <Font name="Consolas Bold" size="16.0" />
                </font>
             </Label>
-            
             <Label fx:id="livesLabel" text="LIVES: 3.0" textFill="RED">
                <font>
                   <Font name="Consolas Bold" size="16.0" />
                </font>
             </Label>
-            
             <Label fx:id="discLabel" text="DISC: 3/3" textFill="LIME">
                <font>
                   <Font name="Consolas Bold" size="16.0" />
@@ -79,16 +78,25 @@
                   <Font name="OCR A Extended" size="40.0" />
                </font>
             </Label>
-            <Button mnemonicParsing="false" onAction="#handleResume" prefHeight="50.0" prefWidth="200.0" style="-fx-background-color: black; -fx-border-color: cyan; -fx-text-fill: white;" text="RESUME">
+            
+            <Button mnemonicParsing="false" onAction="#handleResume" 
+                    prefHeight="50.0" prefWidth="200.0" 
+                    styleClass="pause-button-cyan" 
+                    text="RESUME">
                <font>
                   <Font name="Consolas" size="18.0" />
                </font>
             </Button>
-            <Button mnemonicParsing="false" onAction="#handleQuitToMenu" prefHeight="50.0" prefWidth="200.0" style="-fx-background-color: black; -fx-border-color: red; -fx-text-fill: red;" text="SAVE &amp; QUIT">
+            
+            <Button mnemonicParsing="false" onAction="#handleQuitToMenu" 
+                    prefHeight="50.0" prefWidth="200.0" 
+                    styleClass="pause-button-red" 
+                    text="SAVE &amp; QUIT">
                <font>
                   <Font name="Consolas" size="18.0" />
                </font>
             </Button>
+            
          </children>
       </VBox>
 
