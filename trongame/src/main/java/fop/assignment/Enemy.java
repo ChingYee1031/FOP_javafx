@@ -3,6 +3,7 @@ package fop.assignment;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Random;
+
 import javafx.scene.image.Image;
 
 public class Enemy extends GameCharacter {
@@ -14,10 +15,14 @@ public class Enemy extends GameCharacter {
     private Image enemyIcon;
     private int currentDir = -1; 
 
-    // --- NEW MOVEMENT VARIABLES ---
+    // --- MOVEMENT VARIABLES ---
     private int stepsRemainingInCurrentDir = 0; // How many steps left to walk in same dir
     private int minStraightSteps; // Minimum steps to walk straight
     private int maxStraightSteps; // Maximum steps to walk straight
+    
+    // --- SPEED CONTROL ---
+    private double moveAccumulator = 0.0;
+    private final double MOVEMENT_THRESHOLD = 2.0; // The cost to move 1 tile
 
     // Shooting
     private long lastShotTime = 0;
@@ -54,28 +59,28 @@ public class Enemy extends GameCharacter {
         // Customize based on name hierarchy
         switch (this.name) {
             case "Koura": // EASIEST
-                this.speed = 1.0; // Slowest
+                this.speed = 1.0; // Moves every 2 ticks (Slowest)
                 // Moves in long straight lines (very predictable)
                 this.minStraightSteps = 6;
                 this.maxStraightSteps = 12; 
                 break;
 
             case "Sark": // MEDIUM
-                this.speed = 1.3; // Slightly faster
+                this.speed = 1.3; // Moves ~2 out of 3 ticks
                 // Moderate straight lines
                 this.minStraightSteps = 4;
                 this.maxStraightSteps = 8;
                 break;
 
             case "Rinzler": // HARD
-                this.speed = 1.6; // Fast
+                this.speed = 1.6; // Moves ~4 out of 5 ticks
                 // Shorter lines, changes direction more often
                 this.minStraightSteps = 2;
                 this.maxStraightSteps = 6;
                 break;
 
             case "Clu": // HARDEST
-                this.speed = 1.9; // Very Fast (but playable)
+                this.speed = 1.9; // Moves almost every tick (Very Fast)
                 // Very erratic, changes direction constantly
                 this.minStraightSteps = 1;
                 this.maxStraightSteps = 3;
@@ -92,6 +97,7 @@ public class Enemy extends GameCharacter {
 
     private void loadEnemyImage() {
         try {
+            // Ensure you have these images in your project folder!
             String path = "images/" + this.name + ".png";
             File file = new File(path);
             if (file.exists()) {
@@ -115,11 +121,23 @@ public class Enemy extends GameCharacter {
     public Image getIcon() { return this.enemyIcon; }
     public int getXPReward() { return this.xpReward; }
 
-    // --- NEW AI MOVEMENT LOGIC ---
+    // --- AI MOVEMENT LOGIC ---
     public int makeMove(int[][] grid) {
         if (!isAlive()) return -1;
 
-        // 1. Check if we should continue moving in the current locked direction
+        // 1. SPEED CHECK (The Governor)
+        // Add speed to the "tank". If tank < 2.0, not enough energy to move yet.
+        moveAccumulator += this.speed;
+        
+        if (moveAccumulator < MOVEMENT_THRESHOLD) {
+            return -1; // -1 means "Waiting for turn" (Alive)
+        }
+        
+        // "Pay" the cost to move
+        moveAccumulator -= MOVEMENT_THRESHOLD;
+
+        // 2. MOVEMENT LOGIC
+        // Check if we should continue moving in the current locked direction
         if (currentDir != -1 && stepsRemainingInCurrentDir > 0) {
             // Calculate where the current direction leads
             int nextX = x;
@@ -140,7 +158,7 @@ public class Enemy extends GameCharacter {
             }
         }
 
-        // 2. If we are here, we need to pick a NEW direction (either counter expired or hit wall)
+        // 3. If we are here, we need to pick a NEW direction (either counter expired or hit wall)
         ArrayList<Integer> validMoves = new ArrayList<>();
         // 0=UP, 1=DOWN, 2=LEFT, 3=RIGHT
         if (isSafe(x, y - 1, grid)) validMoves.add(0); 
@@ -148,14 +166,17 @@ public class Enemy extends GameCharacter {
         if (isSafe(x - 1, y, grid)) validMoves.add(2); 
         if (isSafe(x + 1, y, grid)) validMoves.add(3);
 
-        if (validMoves.isEmpty()) return -1; 
+        // --- TRAP DETECTION ---
+        if (validMoves.isEmpty()) {
+            return -2; // RETURN -2 TO SIGNAL "TRAPPED/CRASH"
+        } 
 
         Random rand = new Random();
         
         // Pick a random valid move
         int chosenMove = validMoves.get(rand.nextInt(validMoves.size()));
 
-        // 3. Set the new Direction and the new "Lock" duration
+        // 4. Set the new Direction and the new "Lock" duration
         this.currentDir = chosenMove;
         
         // Generate a random number between min and max steps
@@ -164,7 +185,6 @@ public class Enemy extends GameCharacter {
         return chosenMove;
     }
 
-    // --- CRITICAL FIX HERE ---
     private boolean isSafe(int tx, int ty, int[][] grid) {
         // 1. Bounds Check
         if (tx < 0 || tx >= 40 || ty < 0 || ty >= 40) return false;
