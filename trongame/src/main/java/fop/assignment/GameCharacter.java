@@ -7,7 +7,7 @@ public abstract class GameCharacter {
     protected double speed;
     protected int x, y;
     
-    // Ammo System
+    // RENAMED: Use "DiscSlots" instead of generic Ammo terms
     protected int maxDiscSlots = 1; 
     protected int currentDiscSlots = 1;
     
@@ -43,26 +43,34 @@ public abstract class GameCharacter {
         return lives > 0;
     }
 
-    // --- AMMO & COOLDOWN METHODS ---
-    public boolean hasAmmo() {
+    // --- RENAMED METHODS (Was "Ammo") ---
+
+    // 1. Check if we have discs available
+    public boolean hasDisc() { // Was hasAmmo()
         return currentDiscSlots > 0;
     }
 
-    public void useAmmo() {
+    // 2. Throw a disc (Was useAmmo)
+    public void useDisc() { 
         if (currentDiscSlots > 0) currentDiscSlots--;
     }
 
-    public void recoverAmmo() {
+    // 3. Catch a disc (Was recoverAmmo)
+    public void recoverDisc() {
         if (currentDiscSlots < maxDiscSlots) {
             currentDiscSlots++;
-            // --- FIX: Picking up a disc instantly resets the cooldown ---
-            // This allows you to throw immediately after a successful catch.
+            // Picking up a disc instantly resets the cooldown
             this.lastThrowTime = 0; 
         }
     }
 
+    // 4. NEW: Fix for the bug (Start level with full discs)
+    public void refillDiscSlots() {
+        this.currentDiscSlots = this.maxDiscSlots;
+        this.lastThrowTime = 0; 
+    }
+
     public boolean isCooldownReady() {
-        // If we haven't thrown recently, we are ready
         return System.currentTimeMillis() - lastThrowTime >= COOLDOWN_MS;
     }
     
@@ -75,10 +83,11 @@ public abstract class GameCharacter {
         return (diff < 0) ? 0 : diff;
     }
 
-    public int getCurrentAmmo() { return currentDiscSlots; }
-    public int getMaxAmmo() { return maxDiscSlots; }
+    // --- RENAMED GETTERS ---
+    public int getCurrentDiscSlots() { return currentDiscSlots; } // Was getCurrentAmmo
+    public int getMaxDiscSlots() { return maxDiscSlots; }         // Was getMaxAmmo
 
-    // --- GETTERS & SETTERS ---
+    // --- STANDARD GETTERS ---
     public String getName() { return name; }
     public String getColor() { return color; }
     public double getLives() { return lives; }

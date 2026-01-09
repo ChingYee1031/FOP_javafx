@@ -42,6 +42,8 @@ public class CutscenePage {
         // Setup Keyboard Listeners (Enter/Space)
         if (storyLabel.getScene() != null) setupInput(storyLabel.getScene());
         else storyLabel.sceneProperty().addListener((obs, o, n) -> { if (n!=null) setupInput(n); });
+
+        SoundManager.playMusic("cutscenebgm.wav");
     }
 
     private void setupInput(Scene scene) {

@@ -52,46 +52,58 @@ public class Enemy extends GameCharacter {
     }
 
     private void configureEnemyStats() {
-        // Default settings
-        this.minStraightSteps = 1;
-        this.maxStraightSteps = 5;
-
-        // Customize based on name hierarchy
-        switch (this.name) {
-            case "Koura": // EASIEST
-                this.speed = 1.0; // Moves every 2 ticks (Slowest)
-                // Moves in long straight lines (very predictable)
-                this.minStraightSteps = 6;
-                this.maxStraightSteps = 12; 
+        // 1. Configure Speed & Ammo based on DIFFICULTY
+        // Matching your text file: Easy, Medium, Hard, Impossible
+        switch (this.difficulty) {
+            case "Easy":       // Koura
+                this.speed = 1.0; 
+                this.maxDiscSlots = 1;
                 break;
+            case "Medium":     // Sark (Your text file says "Medium", not "Normal")
+                this.speed = 1.3;
+                this.maxDiscSlots = 1;
+                break;
+            case "Hard":       // Rinzler
+                this.speed = 1.6;
+                this.maxDiscSlots = 2;
+                break;
+            case "Impossible": // Clu
+                this.speed = 1.9;
+                this.maxDiscSlots = 3;
+                break;
+            default:
+                this.speed = 1.2;
+                this.maxDiscSlots = 1;
+        }
+        // Apply ammo capacity
+        this.currentDiscSlots = this.maxDiscSlots;
 
-            case "Sark": // MEDIUM
-                this.speed = 1.3; // Moves ~2 out of 3 ticks
-                // Moderate straight lines
+        // 2. Configure Movement Logic based on INTELLIGENCE
+        // Matching your text file: Erratic, Predictable, Sharp, Aggressive
+        switch (this.intelligence) {
+            case "Erratic": // Koura
+                // Previously Koura had long lines (Slow & wandering)
+                this.minStraightSteps = 6;
+                this.maxStraightSteps = 12;
+                break;
+            case "Predictable": // Sark
+                // Moderate lines
                 this.minStraightSteps = 4;
                 this.maxStraightSteps = 8;
                 break;
-
-            case "Rinzler": // HARD
-                this.speed = 1.6; // Moves ~4 out of 5 ticks
-                // Shorter lines, changes direction more often
+            case "Sharp": // Rinzler
+                // Changes direction often
                 this.minStraightSteps = 2;
                 this.maxStraightSteps = 6;
                 break;
-
-            case "Clu": // HARDEST
-                this.speed = 1.9; // Moves almost every tick (Very Fast)
-                // Very erratic, changes direction constantly
+            case "Aggressive": // Clu
+                // Very twitchy/fast turning
                 this.minStraightSteps = 1;
                 this.maxStraightSteps = 3;
                 break;
-                
             default:
-                // Fallback for custom enemies
-                this.speed = 1.2;
                 this.minStraightSteps = 3;
                 this.maxStraightSteps = 7;
-                break;
         }
     }
 
@@ -109,7 +121,7 @@ public class Enemy extends GameCharacter {
     }
 
     public boolean canShoot() {
-        if (!hasAmmo()) return false;
+        if (!hasDisc()) return false;
         long now = System.nanoTime();
         if (now - lastShotTime > SHOOT_DELAY) {
             lastShotTime = now;

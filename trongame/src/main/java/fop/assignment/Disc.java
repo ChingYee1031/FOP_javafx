@@ -12,9 +12,14 @@ public class Disc {
     private boolean stationary = false;
     private GameCharacter owner;
     
-    // --- UPDATED: DISTANCE LIMIT ---
+    // --- DISTANCE LIMIT ---
     private int distanceTraveled = 0;
-    private final int MAX_DISTANCE = 10; // Changed from 3 to 10
+    private final int MAX_DISTANCE = 10;
+
+    // --- NEW: DESPAWN TIMER ---
+    private long stationaryStartTime = 0;
+    // 10 Seconds in Nanoseconds (10 * 1,000,000,000)
+    private static final long DESPAWN_TIME = 10_000_000_000L; 
 
     private static final DropShadow HOVER_EFFECT = new DropShadow();
     static {
@@ -68,12 +73,23 @@ public class Disc {
     public void returnToOwner() {
         this.active = false;
         if (owner != null) {
-            owner.recoverAmmo();
+            owner.recoverDisc(); 
         }
     }
 
     private void becomeStationary() {
         this.stationary = true;
+        // --- NEW: Record the time we landed ---
+        this.stationaryStartTime = System.nanoTime();
+    }
+
+    /**
+     * NEW METHOD: Checks if the disc has been sitting for 10 seconds.
+     * Returns true if it should disappear.
+     */
+    public boolean checkDespawn() {
+        if (!stationary) return false;
+        return (System.nanoTime() - stationaryStartTime) > DESPAWN_TIME;
     }
 
     public void draw(GraphicsContext gc, int cellWidth) {

@@ -36,6 +36,7 @@ public class CharacterSelection {
         if (App.globalPlayer != null) {
             App.globalPlayer.setColor("#0091ffff"); 
             App.globalPlayer.setSpeed(1.5); 
+            App.globalPlayer.setCharacterModel("Tron");
         } else {
             App.globalPlayer = new Player("Tron", "#0091ffff", 3.0, 1.5);
         }
@@ -48,6 +49,7 @@ public class CharacterSelection {
         if (App.globalPlayer != null) {
             App.globalPlayer.setColor("#ffffffff"); 
             App.globalPlayer.setSpeed(1.5); 
+            App.globalPlayer.setCharacterModel("Kevin");
         } else {
             App.globalPlayer = new Player("Kevin", "#ffffffff", 3.0, 1.5);
         }

@@ -210,6 +210,7 @@ public class ArenaController {
             public void handle(long now) {
                 if (isPaused) return; 
                 if (!gameOverTriggered) {
+                    model.updateRampRespawns();
                     long currentDelay = model.isSpeedBoostActive() ? speedNanos / 2 : speedNanos;
                     if (now - lastUpdate >= currentDelay) {
                         updateGame(); 
@@ -226,14 +227,14 @@ public class ArenaController {
 
     private void updateSidebar() {
         if (player != null) {
-            if (nameLabel != null) nameLabel.setText("CHARACTER: " + player.getName().toUpperCase());
+            if (nameLabel != null) nameLabel.setText("CHARACTER: " + player.getCharacterModel().toUpperCase());
             if (levelLabel != null) levelLabel.setText("LEVEL: " + player.getLevel());
             if (xpLabel != null) xpLabel.setText("XP: " + player.getXP());
             if (livesLabel != null) livesLabel.setText(String.format("LIVES: %.1f", player.getLives()));
             
             // Show Cooldown status in the Disc Label
             if (player.isCooldownReady()) {
-                if (discLabel != null) discLabel.setText("DISC: READY (" + player.getCurrentAmmo() + ")");
+                if (discLabel != null) discLabel.setText("DISC: READY (" + player.getCurrentDiscSlots() + ")");
                 if (discLabel != null) discLabel.setTextFill(Color.CYAN);
             } else {
                 long time = player.getCooldownRemaining() / 1000;
@@ -275,7 +276,7 @@ private void updateGame() {
         if (currentDir != Direction.NONE) {
             if (nextX < 0 || nextX >= COLS || nextY < 0 || nextY >= ROWS) {
                 if(model.isOpenType()) {
-                    SoundManager.playSound("fall.wav"); 
+                    SoundManager.playSound("crash.wav"); 
                     player.reduceLives(100); 
                     triggerGameOverSequence();
                     return;
@@ -288,6 +289,8 @@ private void updateGame() {
                 }
             } else {
                 int nextCell = model.getGrid()[nextX][nextY];
+
+                //collision check
                 if (nextCell == 1 || nextCell == 2 || nextCell == 4) {
                     SoundManager.playSound("crash.wav");
                     player.reduceLives(0.5); 
@@ -295,6 +298,9 @@ private void updateGame() {
                     currentDir = Direction.NONE; 
                     showMessage("CRASHED!", Color.RED);
                 } else {
+                    if(nextCell == 3){
+                        spawnFloatingText("Speed Boost!", player.getX(), player.getY(), Color.CYAN);
+                    }
                     playerTrail.add(new int[]{player.getX(), player.getY()});
                     model.processMove(player, nextX, nextY);
                     if (playerTrail.size() > MAX_TRAIL_LENGTH) {
@@ -309,11 +315,18 @@ private void updateGame() {
         for (int i = 0; i < discs.size(); i++) {
             Disc d = discs.get(i);
             
+            // --- NEW: DESPAWN CHECK (Enemies Only) ---
+            if (d.isActive() && d.isStationary()) {
+                // Check if it belongs to an Enemy AND time is up
+                if (d.getOwner() instanceof Enemy && d.checkDespawn()) {
+                    d.returnToOwner(); // Remove disc, give ammo back to Enemy
+                    continue; // Skip to next disc
+                }
+            }
             // Pickup Logic (Exact tile match required)
             if (d.isActive() && d.isStationary()) {
                 if (d.getOwner() == player) {
                     if (player.getX() == d.getX() && player.getY() == d.getY()) {
-                        SoundManager.playSound("pickup.wav");
                         d.returnToOwner(); 
                     }
                 }
@@ -363,13 +376,26 @@ private void updateGame() {
                 i--; continue;
             }
             
-            // Head-On Collision
+            // --- MODIFIED: HEAD-ON COLLISION ---
             if (e.getX() == player.getX() && e.getY() == player.getY()) {
                  SoundManager.playSound("crash.wav");
-                 e.reduceLives(100);       
-                 player.reduceLives(100);  
-                 triggerGameOverSequence();
-                 return; 
+                 
+                 // 1. Kill the Enemy
+                 e.reduceLives(100); 
+                 
+                 // 2. Hurt the Player (Only 0.5 damage now)
+                 player.reduceLives(0.5); 
+                 spawnFloatingText("-0.5 HP", player.getX(), player.getY(), Color.ORANGE);
+                 showMessage("CRASHED!", Color.RED);
+
+                 // 3. Check if Player died from the damage
+                 if (!player.isAlive()) {
+                     triggerGameOverSequence();
+                     return; 
+                 }
+                 
+                 // 4. Skip the rest of this enemy's logic (they are dead)
+                 continue; 
             }
 
             // Shooting
@@ -385,7 +411,7 @@ private void updateGame() {
                     if (dist > 0 && dist < 15) { shotDir = 3; shoot = true; } 
                     else if (dist < 0 && dist > -15) { shotDir = 2; shoot = true; } 
                 }
-                if (shoot) { e.useAmmo(); discs.add(new Disc(e.getX(), e.getY(), shotDir, e)); }
+                if (shoot) { e.useDisc(); discs.add(new Disc(e.getX(), e.getY(), shotDir, e)); }
             }
             
             // Get Move Decision from AI
@@ -421,14 +447,21 @@ private void updateGame() {
 
     private void handleEnemyDeath(Enemy e, int index) {
         int oldLevel = player.getLevel();
+        
+        // 1. Add XP
         player.addXP(e.getXPReward()); 
         spawnFloatingText("+" + e.getXPReward() + " XP", player.getX(), player.getY(), Color.GOLD);
         showMessage("DEFEATED " + e.getName());
+        
         int newLevel = player.getLevel();
         
+        // 2. Handle Level Up (Visuals & Story)
         if (newLevel > oldLevel) {
             showMessage("LEVEL UP!", Color.GREEN);
             SoundManager.playSound("levelup.wav");
+            
+            // Refill Life/Ammo on Level Up
+            player.levelUp(); 
             
             if (App.globalPlayer != null) {
                 App.globalPlayer.setLevel(newLevel);
@@ -436,11 +469,17 @@ private void updateGame() {
                 DataManager.savePlayer(App.globalPlayer, App.globalPassword);
             }
             
-            if (newLevel >= 99) { triggerGameWinSequence(); return; }
-            
             checkStoryProgression(newLevel);
         }
 
+        // --- 3. WIN CONDITION (MUST BE OUTSIDE THE LEVEL UP BLOCK) ---
+        // Requirement: Level 99 AND 10,000 XP currently in the bar.
+        if (newLevel >= 99 && player.getXP() >= 10000) { 
+            triggerGameWinSequence(); 
+            return; 
+        }
+
+        // 4. Cleanup Enemy
         if (index < activeEnemies.size()) {
             Queue<int[]> deadTrail = enemyTrails.get(index);
             for (int[] pos : deadTrail) model.getGrid()[pos[0]][pos[1]] = 0; 
@@ -522,6 +561,8 @@ private void updateGame() {
             this.player = new Player("Tron", "#00FFFF", 3.0, 1.5);
         }
         player.setLives(player.getLives() <= 0 ? 3 : player.getLives()); 
+        player.refillDiscSlots();
+        
         int startX = 20; int startY = 20;
         player.setPosition(startX, startY);
         for (int i = startX - 2; i <= startX + 2; i++) {
@@ -550,12 +591,15 @@ private void updateGame() {
    private void triggerGameWinSequence() {
         // 1. Stop the game loop
         gameStarted = false; 
+        
+        // Force UI update to ensure sidebar shows correct level/XP
+        updateSidebar();
+        
         if (gameTimer != null) gameTimer.stop();
 
-        // 2. Show Victory Visuals
+        // 2. Show Victory Visuals (Sound removed to prevent crash)
         showMessage("MAXIMUM LEVEL ACHIEVED!", Color.CYAN);
         SoundManager.stopMusic();
-        SoundManager.playSound("win.wav"); 
         
         // 3. Save the Player State (Important so they stay lvl 99)
         if (App.globalPlayer != null && App.globalPassword != null) {
@@ -625,7 +669,7 @@ private void updateGame() {
         
         if (event.getCode() == KeyCode.SPACE) {
             // Check 1: Ammo
-            if (!player.hasAmmo()) {
+            if (!player.hasDisc()) {
                 showMessage("NO DISC REMAIN!", Color.RED);
                 return;
             }
@@ -639,7 +683,7 @@ private void updateGame() {
 
             // Execute Throw
             SoundManager.playSound("shoot.wav");
-            player.useAmmo();
+            player.useDisc();
             player.resetCooldown(); // Start Timer
             
             // --- FIX: SPAWN DISC 1 BLOCK AHEAD ---
@@ -666,8 +710,10 @@ private void updateGame() {
                 int oldCheatLevel = player.getLevel();
                 player.addXP(5000); 
                 if (player.getLevel() > oldCheatLevel) {
-                    if (player.getLevel() >= 99) triggerGameWinSequence(); 
-                    else checkStoryProgression(player.getLevel()); 
+                    checkStoryProgression(player.getLevel()); 
+                }
+                if(player.getLevel() >= 99 && player.getXP() >= 10000) {
+                    triggerGameWinSequence();
                 }
                 break;
             default: break;
@@ -753,12 +799,26 @@ private void drawCharacter(GraphicsContext gc, GameCharacter c) {
                 String[] data = line.split(",");
                 if (data.length >= 6) {
                     String name = data[0].trim();
+                    
                     String color = "#FF0000"; 
                     if (data[1].trim().equalsIgnoreCase("Gold")) color = "#FFD700";
                     else if (data[1].trim().equalsIgnoreCase("Green")) color = "#00FF00";
+                    
                     int xp = Integer.parseInt(data[3].trim());
                     double speed = Double.parseDouble(data[4].trim());
-                    enemyPool.add(new Enemy(name, color, 3.0, speed, data[2].trim(), xp, data[5].trim()));
+
+                    // --- NEW: SET LIFE BASED ON NAME ---
+                    double baseLives = 3.0; // Default for unknown enemies
+                    
+                    if (name.equalsIgnoreCase("Koura") || name.equalsIgnoreCase("Sark")) {
+                        baseLives = 1.0; // Die in 1 hit
+                    } 
+                    else if (name.equalsIgnoreCase("Rinzler") || name.equalsIgnoreCase("Clu")) {
+                        baseLives = 2.0; // Die in 2 hits
+                    }
+
+                    // Use 'baseLives' instead of 3.0
+                    enemyPool.add(new Enemy(name, color, baseLives, speed, data[2].trim(), xp, data[5].trim()));
                 }
             }
             scanner.close();

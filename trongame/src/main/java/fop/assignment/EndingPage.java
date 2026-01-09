@@ -34,6 +34,8 @@ public class EndingPage {
     @FXML
     public void initialize() {
         rootPane.setFocusTraversable(true);
+
+        SoundManager.playMusic("endingbgm.mp3");
     }
 
     @FXML
@@ -83,8 +85,13 @@ public class EndingPage {
             // 2. Hide "Press Space" initially (optional, or keep it if you want them to skip)
             if (PressSpace != null) PressSpace.setVisible(false);
 
-            // 3. Update Text
-            storyLabel.setText("CONGRATULATIONS, USER.\nDESTINY FULFILLED.");
+            // 3. Update Text with USERNAME
+            String playerName = "USER"; // Default fallback
+            if (App.globalPlayer != null) {
+                playerName = App.globalPlayer.getName().toUpperCase(); // e.g. "JOHNDOE"
+            }
+            
+            storyLabel.setText("CONGRATULATIONS, " + playerName + ".\nDESTINY FULFILLED.");
             
             // Adjust Layout
             storyLabel.setPrefHeight(300); 
@@ -151,6 +158,7 @@ public class EndingPage {
             }
             // 3. Credits -> Menu
             else if (isCreditsActive) {
+                SoundManager.stopMusic();
                 App.setRoot("MenuPage");
             }
         }

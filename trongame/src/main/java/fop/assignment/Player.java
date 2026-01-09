@@ -1,11 +1,13 @@
 package fop.assignment;
 
 public class Player extends GameCharacter {
+
     
     private int xp = 0;
     private int level = 1;
     private final int MAX_LEVEL = 99; 
     private boolean seenTutorial = false; 
+    private String characterModel = "Tron"; // default to tron
 
     public Player(String name, String color, double lives, double speed) {
         super(name, color, lives, speed);
@@ -18,6 +20,10 @@ public class Player extends GameCharacter {
         }
         this.currentDiscSlots = this.maxDiscSlots;
     }
+
+    // --- NEW: Getter and Setter for the Hero Name ---
+    public String getCharacterModel() { return characterModel; }
+    public void setCharacterModel(String model) { this.characterModel = model; }
 
     public void addXP(int amount) {
         this.xp += amount;
@@ -35,19 +41,22 @@ public class Player extends GameCharacter {
     public void levelUp() {
         level++;
         
-        // Requirement: +1 Life every 10 levels
-        if (level % 10 == 0) {
-            this.lives += 1.0;
-        }
-
-        // --- REQUIREMENT: +1 Disc Slot every 15 Levels ---
+        // --- NEW: RESTORE HEALTH TO FULL ---
+        // 1. Calculate Max Life: Base is 3.0. You get +1 Max Life for every 10 levels.
+        double maxLives = 3.0 + (int)(level / 10);
+        
+        // 2. Set current lives to that maximum
+        this.lives = maxLives;
+        
+        // --- DISC SLOT UPGRADES ---
+        // +1 Disc Slot every 15 Levels
         if (level % 15 == 0) {
             this.maxDiscSlots++;
             this.currentDiscSlots++; // Fill the new slot immediately
             System.out.println("UPGRADE: Max Disc Slots increased to " + maxDiscSlots);
         }
 
-        // Stat Boosts
+        // --- STAT BOOSTS ---
         if (this.name.equalsIgnoreCase("Kevin")) {
             this.speed += 0.3; 
         } else {

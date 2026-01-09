@@ -1,6 +1,8 @@
 package fop.assignment;
 
+import java.util.ArrayList;
 import java.util.Random;
+import java.util.Iterator;
 
 public class ArenaModel {
     public static final int GRID_SIZE = 40;
@@ -10,6 +12,10 @@ public class ArenaModel {
     
     private boolean isOpenType = false; 
     private boolean speedBoostActive = false;
+
+    // 45 Seconds in Nanoseconds
+    // for speed ramp respawn
+    private final long RAMP_RESPAWN_TIME = 45_000_000_000L;
 
     public ArenaModel() {
         // Default constructor
@@ -108,6 +114,19 @@ public class ArenaModel {
         }
     }
 
+    private class RampTask {
+        int x, y;
+        long timeUsed;
+        
+        RampTask(int x, int y, long timeUsed) {
+            this.x = x; 
+            this.y = y; 
+            this.timeUsed = timeUsed;
+        }
+    }
+
+    private ArrayList <RampTask> usedRamps = new ArrayList<>();
+
     public void processMove(GameCharacter c, int nextX, int nextY) {
         // Check Falling Off (Arena 4 only)
         if (nextX < 0 || nextX >= GRID_SIZE || nextY < 0 || nextY >= GRID_SIZE) {
@@ -118,7 +137,10 @@ public class ArenaModel {
         // Check Collision
         int targetCell = grid[nextX][nextY];
         
-        if (targetCell == 3) this.speedBoostActive = true; 
+        if (targetCell == 3) {
+            this.speedBoostActive = true;
+            usedRamps.add(new RampTask(nextX, nextY, System.nanoTime()));
+        } 
         else this.speedBoostActive = false;
 
         // Valid Move - Leave Trail
@@ -130,7 +152,34 @@ public class ArenaModel {
         c.setPosition(nextX, nextY);
     }
 
+    public void updateRampRespawns() {
+        if (usedRamps.isEmpty()) return;
+
+        long now = System.nanoTime();
+        Iterator<RampTask> it = usedRamps.iterator();
+
+        while (it.hasNext()) {
+            RampTask task = it.next();
+            
+            // If 45 seconds have passed...
+            if (now - task.timeUsed >= RAMP_RESPAWN_TIME) {
+                
+                // RESTORE THE RAMP
+                // Only restore if it's not currently a Wall (1) 
+                // We overwrite Trails (2 or 4) or Empty (0) back to Ramp (3)
+                if (grid[task.x][task.y] != 1) {
+                    grid[task.x][task.y] = 3;
+                }
+                
+                // Remove from the wait list
+                it.remove();
+            }
+        }
+    }
+
     public boolean isSpeedBoostActive() { return speedBoostActive; }
     public int[][] getGrid() { return grid; }
     public boolean isOpenType() { return isOpenType; }
+
+    
 }
