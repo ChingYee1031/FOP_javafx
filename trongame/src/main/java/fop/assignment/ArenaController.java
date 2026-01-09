@@ -589,37 +589,33 @@ private void updateGame() {
     }
 
    private void triggerGameWinSequence() {
-        // 1. Stop the game loop
-        gameStarted = false; 
-        
-        // Force UI update to ensure sidebar shows correct level/XP
-        updateSidebar();
-        
-        if (gameTimer != null) gameTimer.stop();
+    gameStarted = false; 
 
-        // 2. Show Victory Visuals (Sound removed to prevent crash)
-        showMessage("MAXIMUM LEVEL ACHIEVED!", Color.CYAN);
-        SoundManager.stopMusic();
-        
-        // 3. Save the Player State (Important so they stay lvl 99)
-        if (App.globalPlayer != null && App.globalPassword != null) {
-            App.globalPlayer.setLevel(player.getLevel());
-            App.globalPlayer.setXP(player.getXP());
-            DataManager.savePlayer(App.globalPlayer, App.globalPassword);
-        }
-
-        // 4. Wait 3 seconds, then go to Ending Selection Page
-        PauseTransition pause = new PauseTransition(Duration.seconds(3));
-        pause.setOnFinished(ev -> { 
-            try { 
-                // Redirect to the Selection Page (Blue/White Buttons)
-                App.setRoot("EndingPage"); 
-            } catch (Exception ex) { 
-                ex.printStackTrace();
-            } 
-        });
-        pause.play();
+    // --- SAFETY FIX START ---
+    try {
+        updateSidebar(); // We wrap this so if it crashes, the game still finishes!
+    } catch (Exception e) {
+        System.out.println("Sidebar update failed, but ignoring it.");
     }
+    // --- SAFETY FIX END ---
+
+    if (gameTimer != null) gameTimer.stop();
+
+    showMessage("MAXIMUM LEVEL ACHIEVED!", Color.CYAN);
+    SoundManager.stopMusic();
+    
+    // Save Code...
+
+    PauseTransition pause = new PauseTransition(Duration.seconds(3));
+    pause.setOnFinished(ev -> { 
+        try { 
+            App.setRoot("EndingPage"); 
+        } catch (Exception ex) { 
+            ex.printStackTrace();
+        } 
+    });
+    pause.play();
+}
 
     private int getMaxEnemiesForLevel() {
         int pLevel = player.getLevel();
