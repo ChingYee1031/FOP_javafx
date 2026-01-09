@@ -28,13 +28,46 @@ public class Player extends GameCharacter {
     public void addXP(int amount) {
         this.xp += amount;
         
-        // Use 20 scaling factor to match the 10 XP enemies
-        int xpNeeded = level * 20; 
-        
-        while (this.xp >= xpNeeded) {
-            this.xp -= xpNeeded;
-            levelUp();
-            xpNeeded = level * 20; 
+        // --- 1. STOP IF ALREADY MAX LEVEL ---
+        if (level >= MAX_LEVEL) {
+            return; 
+        }
+
+        while (true) {
+            // --- 2. STOP IF WE HIT MAX LEVEL DURING LOOP ---
+            if (level >= MAX_LEVEL) {
+                break; 
+            }
+
+            int xpNeeded;
+
+            // --- PHASE 1: KOURA (Levels 1-4) ---
+            if (this.level < 5) {
+                xpNeeded = this.level * 20;
+            } 
+            // --- PHASE 2: SARK (Levels 5-9) ---
+            else if (this.level < 10) {
+                xpNeeded = this.level * 120;
+            }
+            // --- PHASE 3: THE CLIMB (Levels 10-29) ---
+            // Difficulty rises quickly here (6 kills -> 9 kills)
+            else if (this.level < 30) {
+                xpNeeded = this.level * 300;
+            }
+            // --- PHASE 4: THE GRIND (Levels 30-98) ---
+            // Difficulty flattens out. 
+            // Starts at 9,000. Ends at ~17,100.
+            else {
+                xpNeeded = 9000 + ((this.level - 30) * 120);
+            }
+
+            // If we have enough XP, level up and subtract the cost
+            if (this.xp >= xpNeeded) {
+                this.xp -= xpNeeded;
+                levelUp();
+            } else {
+                break;
+            }
         }
     }
 

@@ -708,7 +708,7 @@ private void updateGame() {
             case D: if (currentDir != Direction.LEFT)  bufferedDir = Direction.RIGHT; break;
             case L: /* Cheat logic */ 
                 int oldCheatLevel = player.getLevel();
-                player.addXP(5000); 
+                player.addXP(50); 
                 if (player.getLevel() > oldCheatLevel) {
                     checkStoryProgression(player.getLevel()); 
                 }
