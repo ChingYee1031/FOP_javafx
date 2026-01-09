@@ -28,13 +28,13 @@ public class Player extends GameCharacter {
     public void addXP(int amount) {
         this.xp += amount;
         
-        // Level Up Threshold
-        int xpNeeded = (level <= 10) ? level * 100 : level * 300; 
+        // Use 20 scaling factor to match the 10 XP enemies
+        int xpNeeded = level * 20; 
         
-        while (this.xp >= xpNeeded && level < MAX_LEVEL) {
-            this.xp -= xpNeeded; 
+        while (this.xp >= xpNeeded) {
+            this.xp -= xpNeeded;
             levelUp();
-            xpNeeded = (level <= 10) ? level * 100 : level * 300;
+            xpNeeded = level * 20; 
         }
     }
 
