@@ -14,11 +14,15 @@ public class DataManager {
     private static final String FILE_PATH = "users.csv";
 
     // --- 1. SAVE PROGRESS (Updates existing user or creates new one) ---
+    // --- 1. SAVE PROGRESS ---
     public static void savePlayer(Player player, String password) {
         List<String> lines = new ArrayList<>();
         boolean userFound = false;
 
-        // Read all existing lines
+        // Calculate Score Logic
+        int currentScore = calculateScore(player);
+        
+
         try (BufferedReader br = new BufferedReader(new FileReader(FILE_PATH))) {
             String line;
             while ((line = br.readLine()) != null) {
@@ -28,41 +32,50 @@ public class DataManager {
                 
                 // If username matches, update their data
                 if (parts.length > 0 && parts[0].equals(player.getName())) {
-                    // FORMAT: Name, Pass, Level, XP, Score, Date, SeenTutorial
+                    
+                    // --- OPTIONAL: KEEP HIGH SCORE ---
+                    // If you want the leaderboard to always show their BEST run ever, 
+                    // un-comment the logic below. Otherwise, it shows the current run's score.
+                    /*
+                    try {
+                        int oldScore = Integer.parseInt(parts[4]);
+                        if (oldScore > currentScore && player.getLevel() != 0) {
+                             currentScore = oldScore;
+                        }
+                    } catch (Exception e) {}
+                    */
+
                     String updatedLine = String.format("%s,%s,%d,%d,%d,%s,%b",
                             player.getName(),
                             password, 
                             player.getLevel(),
                             player.getXP(),
-                            calculateScore(player), 
+                            currentScore, // <--- USE THE FIXED VARIABLE HERE
                             LocalDate.now().toString(),
-                            player.hasSeenTutorial() // <--- NEW DATA POINT
+                            player.hasSeenTutorial()
                     );
                     lines.add(updatedLine);
                     userFound = true;
                 } else {
-                    lines.add(line); // Keep other users unchanged
+                    lines.add(line); 
                 }
             }
-        } catch (IOException e) {
-            // File might not exist yet, that's fine
-        }
+        } catch (IOException e) { }
 
-        // If it's a new user, add them to the list
+        // If it's a new user
         if (!userFound) {
             String newLine = String.format("%s,%s,%d,%d,%d,%s,%b",
                     player.getName(), password, player.getLevel(), player.getXP(), 
-                    calculateScore(player), LocalDate.now().toString(),
+                    currentScore, // <--- USE FIXED VARIABLE
+                    LocalDate.now().toString(),
                     player.hasSeenTutorial());
             lines.add(newLine);
         }
 
-        // Write everything back to the file
+        // Write to file
         try (PrintWriter pw = new PrintWriter(new FileWriter(FILE_PATH))) {
             for (String l : lines) pw.println(l);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+        } catch (IOException e) { e.printStackTrace(); }
     }
 
     // --- 2. LOGIN (LOAD PLAYER) ---

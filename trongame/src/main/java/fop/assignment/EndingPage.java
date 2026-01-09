@@ -1,7 +1,6 @@
 package fop.assignment;
 
 import java.io.File;
-import java.io.IOException;
 import javafx.animation.PauseTransition;
 import javafx.fxml.FXML;
 import javafx.geometry.Pos;
@@ -144,22 +143,36 @@ public class EndingPage {
         isCongratsActive = false;
         isCreditsActive = true;
     }
+
+    // inside EndingPage.java
+
+    private void returnToMenu() {
+        try {
+            // 1. Just Save (Do NOT reset to 0)
+            if (App.globalPlayer != null && App.globalPassword != null) {
+                // The player is currently Lvl 99, XP 10000. 
+                // We save this state so the Leaderboard sees the high score.
+                DataManager.savePlayer(App.globalPlayer, App.globalPassword);
+            }
+
+            // 2. Stop Music and Switch
+            SoundManager.stopMusic();
+            App.setRoot("MenuPage");
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
     @FXML
-    private void handleKeyPress(KeyEvent event) throws IOException {
+    private void handleKeyPress(KeyEvent event) {
         if (event.getCode() == KeyCode.SPACE || event.getCode() == KeyCode.ENTER) {
-            
-            // 1. Story -> Congratulations
             if (isCutsceneActive) {
                 showCongratulations();
-            }
-            // 2. Congratulations -> Credits (Manual Skip)
-            else if (isCongratsActive) {
+            } else if (isCongratsActive) {
                 showCredits();
-            }
-            // 3. Credits -> Menu
-            else if (isCreditsActive) {
-                SoundManager.stopMusic();
-                App.setRoot("MenuPage");
+            } else if (isCreditsActive) {
+                returnToMenu(); // <--- Call the save/reset logic here
             }
         }
     }

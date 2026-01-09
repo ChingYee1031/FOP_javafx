@@ -41,6 +41,32 @@ public class MenuPage {
         if (resetConfirmationOverlay != null) {
             resetConfirmationOverlay.setVisible(false);
         }
+
+        checkSaveFile();
+    }
+
+    private void checkSaveFile() {
+        continueGameButton.setDisable(true); // Default to disabled
+
+        if (App.globalPlayer != null && App.globalPassword != null) {
+            
+            // Reload from file to be sure
+            Player savedData = DataManager.login(App.globalPlayer.getName(), App.globalPassword);
+
+            if (savedData != null) {
+                
+                // --- NEW LOGIC ---
+                // If Player is at the "End Game" state (Lvl 99 AND XP >= 10000)
+                // Disable the button so they can't crash the game by continuing.
+                boolean isGameFinished = (savedData.getLevel() >= 99 && savedData.getXP() >= 10000);
+
+                if (isGameFinished) {
+                    continueGameButton.setDisable(true); // Game Done -> Must start New Game
+                } else {
+                    continueGameButton.setDisable(false); // Game in progress -> Allow Continue
+                }
+            }
+        }
     }
 
     @FXML
