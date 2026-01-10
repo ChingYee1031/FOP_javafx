@@ -21,6 +21,11 @@ public class Disc {
     // 10 Seconds in Nanoseconds (10 * 1,000,000,000)
     private static final long DESPAWN_TIME = 10_000_000_000L; 
 
+    // --- NEW: SAFETY STEPS (GHOSTING) ---
+    // The disc ignores walls for the first 3 frames to prevent 
+    // getting stuck in the player's own trail when turning.
+    private int safetySteps = 3; 
+
     private static final DropShadow HOVER_EFFECT = new DropShadow();
     static {
         HOVER_EFFECT.setRadius(10.0);
@@ -48,14 +53,32 @@ public class Disc {
             case 3: nextX++; break; // RIGHT
         }
 
-        // 1. Check Bounds
+        // 1. Check Bounds (Always respect map limits)
         if (nextX < 0 || nextX >= grid.length || nextY < 0 || nextY >= grid[0].length) {
             becomeStationary();
             return;
         }
 
-        // 2. Check Walls/Trails
+        // 2. SAFETY CHECK (Ghosting)
+        // If we are in the "Safety Phase", move without checking walls.
+        if (safetySteps > 0) {
+            safetySteps--;
+            
+            // Move unconditionally
+            this.x = nextX;
+            this.y = nextY;
+            
+            // Increment Distance
+            distanceTraveled++;
+            if (distanceTraveled >= MAX_DISTANCE) {
+                becomeStationary();
+            }
+            return; // Skip the wall check below
+        }
+
+        // 3. Normal Wall/Trail Checks
         int cell = grid[nextX][nextY];
+        // If it hits a Wall (1), Player Trail (2), or Enemy Trail (4)
         if (cell == 1 || cell == 2 || cell == 4) {
             becomeStationary();
         } else {

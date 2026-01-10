@@ -22,33 +22,42 @@ public class LeaderboardPage {
 
     @FXML
     public void initialize() {
-        // 1. Setup Columns (Must match getters in PlayerScore.java)
+        // 1. Setup Columns
         nameColumn.setCellValueFactory(new PropertyValueFactory<>("name"));
         levelColumn.setCellValueFactory(new PropertyValueFactory<>("level"));
         scoreColumn.setCellValueFactory(new PropertyValueFactory<>("score"));
-        
-        // --- NEW: Link Date Column ---
         dateColumn.setCellValueFactory(new PropertyValueFactory<>("date"));
 
         // 2. Load Real Data
         List<PlayerScore> topPlayers = DataManager.getTopPlayers();
         
-        // LIMIT TO TOP 10
+        // 3. --- NEW: FORCE 10 ROWS LOGIC ---
+        
+        // If we have more than 10, cut it to 10.
         if (topPlayers.size() > 10) {
             topPlayers = topPlayers.subList(0, 10);
         }
 
-        // 3. Put data in table
+        // If we have LESS than 10, add "Empty" placeholders until we hit 10.
+        while (topPlayers.size() < 10) {
+            // Add a placeholder row. 
+            // You can change "---" to "" if you want it completely blank.
+            // Using 0 for numbers because int cannot be null.
+            topPlayers.add(new PlayerScore("---", 0, 0, "---"));
+        }
+
+        // 4. Put data in table
         ObservableList<PlayerScore> data = FXCollections.observableArrayList(topPlayers);
         scoreTable.setItems(data);
 
-        // --- REMOVE EMPTY SPACE LOGIC ---
+        // 5. --- FIX TABLE HEIGHT FOR 10 ROWS ---
         int rowHeight = 35;  
         int headerHeight = 32; 
         
         scoreTable.setFixedCellSize(rowHeight);
         
-        int totalHeight = (topPlayers.size() * rowHeight) + headerHeight + 5;
+        // Calculate height based on 10 rows EXACTLY (not topPlayers.size())
+        int totalHeight = (10 * rowHeight) + headerHeight + 5;
         
         scoreTable.setPrefHeight(totalHeight);
         scoreTable.setMinHeight(totalHeight);

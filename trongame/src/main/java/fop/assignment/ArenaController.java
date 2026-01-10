@@ -829,17 +829,12 @@ private void drawCharacter(GraphicsContext gc, GameCharacter c) {
                     int xp = Integer.parseInt(data[3].trim());
                     double speed = Double.parseDouble(data[4].trim());
 
-                    // --- NEW: SET LIFE BASED ON NAME ---
-                    double baseLives = 3.0; // Default for unknown enemies
-                    
-                    if (name.equalsIgnoreCase("Koura") || name.equalsIgnoreCase("Sark")) {
-                        baseLives = 1.0; // Die in 1 hit
-                    } 
-                    else if (name.equalsIgnoreCase("Rinzler") || name.equalsIgnoreCase("Clu")) {
-                        baseLives = 2.0; // Die in 2 hits
-                    }
+                    // Inside loadEnemiesToPool method
 
-                    // Use 'baseLives' instead of 3.0
+                    // 1. Force all lives to 1.0
+                    double baseLives = 1.0; 
+
+                    // 2. Create the enemy with that life value
                     enemyPool.add(new Enemy(name, color, baseLives, speed, data[2].trim(), xp, data[5].trim()));
                 }
             }
