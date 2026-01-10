@@ -477,8 +477,8 @@ private void updateGame() {
         // Requirement: Level 99 AND 10,000 XP currently in the bar.
         if (newLevel >= 99 && player.getXP() >= 10000) { 
             triggerGameWinSequence();
-            isEndingSequenceActive = true;
-            //removed a return here
+            // Remove the manual flag setting here too; the method handles it.
+            return; // Add return to stop further processing
         }
 
         // 4. Cleanup Enemy
@@ -722,11 +722,11 @@ private void updateGame() {
             case A: if (currentDir != Direction.RIGHT) bufferedDir = Direction.LEFT; break;
             case D: if (currentDir != Direction.LEFT)  bufferedDir = Direction.RIGHT; break;
             case L: // SAFETY 1: Ignore input if we are already winning
-                if (isEndingSequenceActive) return; 
+                if (isEndingSequenceActive) return;
 
                 /* Cheat logic */ 
                 int oldCheatLevel = player.getLevel();
-                player.addXP(500); 
+                player.addXP(1000); 
 
                 if (player.getLevel() > oldCheatLevel) {
                     checkStoryProgression(player.getLevel()); 
@@ -734,8 +734,8 @@ private void updateGame() {
 
                 // CHECK WIN
                 if (player.getLevel() >= 99 && player.getXP() >= 10000) {
-                    // SAFETY 2: Lock immediately so next 'L' press does nothing
-                    isEndingSequenceActive = true; 
+                    // FIX: Do NOT set isEndingSequenceActive = true here.
+                    // The triggerGameWinSequence() method does that for you.
                     triggerGameWinSequence();
                 }
                 break;
