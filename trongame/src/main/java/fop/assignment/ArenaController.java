@@ -680,7 +680,6 @@ private void updateGame() {
     @FXML
     public void handleKeyPress(KeyEvent event) {
         if (!gameStarted || gameOverTriggered || isPaused) return; 
-        
         if (event.getCode() == KeyCode.SPACE) {
             // Check 1: Ammo
             if (!player.hasDisc()) {
@@ -694,11 +693,6 @@ private void updateGame() {
                 showMessage("COOLDOWN: " + (timeLeft + 1) + "s", Color.ORANGE);
                 return;
             }
-
-            // Execute Throw
-            SoundManager.playSound("shoot.wav");
-            player.useDisc();
-            player.resetCooldown(); // Start Timer
             
             // --- FIX: SPAWN DISC 1 BLOCK AHEAD ---
             int spawnX = player.getX();
@@ -711,8 +705,25 @@ private void updateGame() {
                 case 3: spawnX++; break; // RIGHT
             }
             
-            discs.add(new Disc(spawnX, spawnY, lastFacingDir, player));
-            return;
+            // 2. CHECK THE GRID AT THAT SPOT
+            // Verify bounds first to prevent crash
+            if (spawnX >= 0 && spawnX < 40 && spawnY >= 0 && spawnY < 40) {
+                int tileAhead = model.getGrid()[spawnX][spawnY];
+
+                // 3. THE GATEKEEPER
+                // Only shoot if the tile ahead is EMPTY (0) or a Pickup (3)
+                // If it is Wall (1), Player Trail (2), or Enemy Trail (4), DO NOT SHOOT.
+                if (tileAhead != 1 && tileAhead != 2 && tileAhead != 4) {
+                    SoundManager.playSound("shoot.wav");
+                    player.useDisc();
+                    player.resetCooldown();
+                    discs.add(new Disc(spawnX, spawnY, lastFacingDir, player));
+                } else {
+                    System.out.println("Blocked! Cannot shoot into wall.");
+                }
+            } else {
+                System.out.println("Blocked! Edge of map.");
+            }
         }
         
         switch (event.getCode()) {
