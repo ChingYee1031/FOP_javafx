@@ -71,6 +71,7 @@ public class ArenaController {
     private boolean gameStarted = false;
     private boolean gameOverTriggered = false;
     private boolean isPaused = false;
+    private boolean isEndingSequenceActive = false;
 
     // --- MESSAGE SYSTEM ---
     private String gameMessage = ""; 
@@ -475,8 +476,9 @@ private void updateGame() {
         // --- 3. WIN CONDITION (MUST BE OUTSIDE THE LEVEL UP BLOCK) ---
         // Requirement: Level 99 AND 10,000 XP currently in the bar.
         if (newLevel >= 99 && player.getXP() >= 10000) { 
-            triggerGameWinSequence(); 
-            return; 
+            triggerGameWinSequence();
+            isEndingSequenceActive = true;
+            //removed a return here
         }
 
         // 4. Cleanup Enemy
@@ -589,33 +591,50 @@ private void updateGame() {
     }
 
    private void triggerGameWinSequence() {
-    gameStarted = false; 
+        // If this method has run before, STOP immediately.
+        if (isEndingSequenceActive) {
+            return; 
+        }
+        // Lock the door immediately so the next call (1/60th sec later) is blocked.
+        isEndingSequenceActive = true;
+        gameStarted = false; 
 
-    // --- SAFETY FIX START ---
-    try {
-        updateSidebar(); // We wrap this so if it crashes, the game still finishes!
-    } catch (Exception e) {
-        System.out.println("Sidebar update failed, but ignoring it.");
+        // --- SAFETY FIX START ---
+        try {
+            updateSidebar(); // We wrap this so if it crashes, the game still finishes!
+        } catch (Exception e) {
+            System.out.println("Sidebar update failed, but ignoring it.");
+        }
+        // --- SAFETY FIX END ---
+
+        if (gameTimer != null) gameTimer.stop();
+
+        showMessage("MAXIMUM LEVEL ACHIEVED!", Color.CYAN);
+        SoundManager.stopMusic();
+        SoundManager.playSound("levelup.wav");
+        
+        // Save Code...
+        //SAVE WITH XP CAP (FIXES 9-DIGIT BUG) ---
+        try {
+            if (App.globalPlayer != null && App.globalPassword != null) {
+                App.globalPlayer.setLevel(99);
+                App.globalPlayer.setXP(10000);
+                DataManager.savePlayer(App.globalPlayer, App.globalPassword);
+            }
+        } catch (Exception e) {
+            System.out.println("Save failed: " + e.getMessage());
+        }
+
+        PauseTransition pause = new PauseTransition(Duration.seconds(3));
+        pause.setOnFinished(ev -> { 
+            try { 
+                App.setRoot("EndingPage"); 
+            } catch (Exception ex) { 
+                ex.printStackTrace();
+            } 
+        });
+        pause.play();
     }
-    // --- SAFETY FIX END ---
-
-    if (gameTimer != null) gameTimer.stop();
-
-    showMessage("MAXIMUM LEVEL ACHIEVED!", Color.CYAN);
-    SoundManager.stopMusic();
-    
-    // Save Code...
-
-    PauseTransition pause = new PauseTransition(Duration.seconds(3));
-    pause.setOnFinished(ev -> { 
-        try { 
-            App.setRoot("EndingPage"); 
-        } catch (Exception ex) { 
-            ex.printStackTrace();
-        } 
-    });
-    pause.play();
-}
 
     private int getMaxEnemiesForLevel() {
         int pLevel = player.getLevel();
@@ -702,13 +721,21 @@ private void updateGame() {
             case S: if (currentDir != Direction.UP)   bufferedDir = Direction.DOWN; break;
             case A: if (currentDir != Direction.RIGHT) bufferedDir = Direction.LEFT; break;
             case D: if (currentDir != Direction.LEFT)  bufferedDir = Direction.RIGHT; break;
-            case L: /* Cheat logic */ 
+            case L: // SAFETY 1: Ignore input if we are already winning
+                if (isEndingSequenceActive) return; 
+
+                /* Cheat logic */ 
                 int oldCheatLevel = player.getLevel();
                 player.addXP(500); 
+
                 if (player.getLevel() > oldCheatLevel) {
                     checkStoryProgression(player.getLevel()); 
                 }
-                if(player.getLevel() >= 99 && player.getXP() >= 10000) {
+
+                // CHECK WIN
+                if (player.getLevel() >= 99 && player.getXP() >= 10000) {
+                    // SAFETY 2: Lock immediately so next 'L' press does nothing
+                    isEndingSequenceActive = true; 
                     triggerGameWinSequence();
                 }
                 break;

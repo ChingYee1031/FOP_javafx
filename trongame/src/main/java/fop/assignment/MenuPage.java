@@ -1,6 +1,7 @@
 package fop.assignment;
 
 import java.io.IOException;
+
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;
 import javafx.scene.layout.VBox;
@@ -17,55 +18,37 @@ public class MenuPage {
 
     @FXML
     public void initialize() {
-        // CHECK: Is this a new player?
-        boolean hasProgress = false;
+        // CHECK: Is there a valid player loaded?
+        boolean canContinue = false;
         
         if (App.globalPlayer != null) {
-            // If Level > 1 or they have finished the tutorial, they have progress.
-            if (App.globalPlayer.getLevel() > 1 || App.globalPlayer.hasSeenTutorial()) {
-                hasProgress = true;
+            // Check for Progress (Level > 1 OR Tutorial Seen)
+            boolean hasProgress = (App.globalPlayer.getLevel() > 1 || App.globalPlayer.hasSeenTutorial());
+
+            // Check for "Game Over" state (Max Level & Max XP)
+            // If they beat the game, they cannot continue; they must start over.
+            boolean isGameFinished = (App.globalPlayer.getLevel() >= 99 && App.globalPlayer.getXP() >= 10000);
+
+            // C. FINAL LOGIC: Enable ONLY if they have progress AND haven't finished the game
+            if (hasProgress && !isGameFinished) {
+                canContinue = true;
             }
         }
 
-        // If no progress, disable "Continue"
-        if (!hasProgress) {
-            continueGameButton.setDisable(true); 
-            continueGameButton.setStyle("-fx-background-color: black; -fx-border-color: grey; -fx-text-fill: grey;");
-        } else {
+        // 2. APPLY STATE TO BUTTON
+        if (canContinue) {
             // Enable "Continue"
             continueGameButton.setDisable(false);
             continueGameButton.setStyle("-fx-background-color: black; -fx-border-color: cyan; -fx-text-fill: cyan;");
+        } else {
+            // Disable "Continue"
+            continueGameButton.setDisable(true);
+            continueGameButton.setStyle("-fx-background-color: black; -fx-border-color: grey; -fx-text-fill: grey;");
         }
         
         // Ensure overlay is hidden at start
         if (resetConfirmationOverlay != null) {
             resetConfirmationOverlay.setVisible(false);
-        }
-
-        checkSaveFile();
-    }
-
-    private void checkSaveFile() {
-        continueGameButton.setDisable(true); // Default to disabled
-
-        if (App.globalPlayer != null && App.globalPassword != null) {
-            
-            // Reload from file to be sure
-            Player savedData = DataManager.login(App.globalPlayer.getName(), App.globalPassword);
-
-            if (savedData != null) {
-                
-                // --- NEW LOGIC ---
-                // If Player is at the "End Game" state (Lvl 99 AND XP >= 10000)
-                // Disable the button so they can't crash the game by continuing.
-                boolean isGameFinished = (savedData.getLevel() >= 99 && savedData.getXP() >= 10000);
-
-                if (isGameFinished) {
-                    continueGameButton.setDisable(true); // Game Done -> Must start New Game
-                } else {
-                    continueGameButton.setDisable(false); // Game in progress -> Allow Continue
-                }
-            }
         }
     }
 
