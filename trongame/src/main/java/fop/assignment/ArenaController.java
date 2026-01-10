@@ -478,7 +478,6 @@ private void updateGame() {
         if (newLevel >= 99 && player.getXP() >= 10000) { 
             triggerGameWinSequence();
             // Remove the manual flag setting here too; the method handles it.
-            return; // Add return to stop further processing
         }
 
         // 4. Cleanup Enemy
