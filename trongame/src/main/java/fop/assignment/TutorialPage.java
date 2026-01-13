@@ -27,14 +27,14 @@ public class TutorialPage {
 
     private void handleFinishTutorial() {
         try {
-            // 1. Mark Tutorial as Seen & Save
+            // Mark Tutorial as Seen & Save
             if (App.globalPlayer != null) {
                 App.globalPlayer.setSeenTutorial(true);
                 DataManager.savePlayer(App.globalPlayer, App.globalPassword);
                 System.out.println("Tutorial Complete. Flag Saved.");
             }
 
-            // 2. Decide Next Step
+            // Decide Next Step
             if (App.globalPlayer.getLevel() == 1) {
                 System.out.println("Level 1 detected -> Going to Chapter 1 Cutscene");
                 App.goToCutscene("chapter1");

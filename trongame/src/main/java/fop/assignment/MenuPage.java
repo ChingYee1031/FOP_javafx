@@ -1,24 +1,20 @@
 package fop.assignment;
 
 import java.io.IOException;
-
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;
 import javafx.scene.layout.VBox;
 
 public class MenuPage {
-
     @FXML private Button startNewGameButton;
     @FXML private Button continueGameButton;
     @FXML private Button leaderboardButton;
     @FXML private Button exitGameButton;
-    
-    // The Overlay Box
     @FXML private VBox resetConfirmationOverlay;
 
     @FXML
     public void initialize() {
-        // CHECK: Is there a valid player loaded?
+        // Is there a valid player loaded?
         boolean canContinue = false;
         
         if (App.globalPlayer != null) {
@@ -26,16 +22,16 @@ public class MenuPage {
             boolean hasProgress = (App.globalPlayer.getLevel() > 1 || App.globalPlayer.hasSeenTutorial());
 
             // Check for "Game Over" state (Max Level & Max XP)
-            // If they beat the game, they cannot continue; they must start over.
+            // If max lvl reached, they must start over.
             boolean isGameFinished = (App.globalPlayer.getLevel() >= 99 && App.globalPlayer.getXP() >= 10000);
 
-            // C. FINAL LOGIC: Enable ONLY if they have progress AND haven't finished the game
+            // FINAL LOGIC: Enable ONLY if they have progress & haven't finished the game
             if (hasProgress && !isGameFinished) {
                 canContinue = true;
             }
         }
 
-        // 2. APPLY STATE TO BUTTON
+        // APPLY STATE TO BUTTON
         if (canContinue) {
             // Enable "Continue"
             continueGameButton.setDisable(false);
@@ -46,7 +42,6 @@ public class MenuPage {
             continueGameButton.setStyle("-fx-background-color: black; -fx-border-color: grey; -fx-text-fill: grey;");
         }
         
-        // Ensure overlay is hidden at start
         if (resetConfirmationOverlay != null) {
             resetConfirmationOverlay.setVisible(false);
         }
@@ -54,32 +49,32 @@ public class MenuPage {
 
     @FXML
     private void handleStartNewGame() throws IOException {
-        // 1. Check if they have progress to lose
+        // Check if they have progress to lose
         boolean hasProgress = false;
         if (App.globalPlayer != null && App.globalPlayer.getLevel() > 1) {
             hasProgress = true;
         }
 
         if (hasProgress) {
-            // 2. SHOW OVERLAY: Ask for confirmation
+            // SHOW OVERLAY: Ask for confirmation
             if (resetConfirmationOverlay != null) {
                 resetConfirmationOverlay.setVisible(true);
             }
         } else {
-            // 3. NO PROGRESS: Start immediately
+            // NO PROGRESS: Start immediately
             performResetAndStart();
         }
     }
 
     @FXML
     private void handleConfirmReset() throws IOException {
-        // User clicked "YES" on the overlay
+        // User clicked "YES" 
         performResetAndStart();
     }
 
     @FXML
     private void handleCancelReset() {
-        // User clicked "NO" on the overlay
+        // User clicked "NO" 
         if (resetConfirmationOverlay != null) {
             resetConfirmationOverlay.setVisible(false);
         }
@@ -101,24 +96,22 @@ public class MenuPage {
         System.exit(0);
     }
 
-    // --- HELPER: The Actual Reset Logic ---
+    // The Actual Reset Logic 
     private void performResetAndStart() throws IOException {
         if (App.globalPlayer != null) {
-            // 1. Capture the Name (and Password if needed)
+            // Capture the Name (and Password if needed)
             String currentName = App.globalPlayer.getName();
             
-            // 2. HARD RESET: Create a brand new Player object
-            // This wipes Inventory, XP, Level, and Tutorial Flags completely.
-            // We default to "Tron" (Cyan) settings, CharacterSelection will update color later.
+            // HARD RESET: Create a brand new Player object
+            //default to "Tron" (Cyan) 
             App.globalPlayer = new Player(currentName, "#00FFFF", 3.0, 1.5);
             
-            // 3. Force Level 1 Explicitly
+            // Force Level 1 Explicitly (csv)
             App.globalPlayer.setLevel(1);
             App.globalPlayer.setXP(0);
             App.globalPlayer.setSeenTutorial(false);
 
-            // 4. SAVE TO FILE IMMEDIATELY
-            // Use globalPassword if your system requires it for saving
+            // SAVE TO FILE 
             if (App.globalPassword != null) {
                 DataManager.savePlayer(App.globalPlayer, App.globalPassword);
             }
@@ -126,7 +119,7 @@ public class MenuPage {
             System.out.println("RESET COMPLETE: Player is now Level " + App.globalPlayer.getLevel());
         }
 
-        // 5. Proceed
+        //Proceed
         App.setRoot("CharacterSelection");
     }
 }

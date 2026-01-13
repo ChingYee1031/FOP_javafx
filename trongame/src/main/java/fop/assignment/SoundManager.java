@@ -16,16 +16,16 @@ public class SoundManager {
 
     public static void playSound(String fileName) {
         try {
-            // 1. Attempt to find the file
+            // find the file
             URL resource = SoundManager.class.getResource("sounds/" + fileName);
             
-            // 2. SAFETY CHECK
+            // SAFETY CHECK
             if (resource == null) {
                 System.out.println("⚠️ Warning: Sound file not found: " + fileName);
                 return; 
             }
 
-            // 3. Play the sound
+            // Play the sound
             String path = resource.toExternalForm();
             AudioClip clip = new AudioClip(path);
             clip.play();
@@ -37,7 +37,7 @@ public class SoundManager {
 
     public static void playMusic(String fileName) {
         try {
-            // 1. Stop existing music AND any running fade animations
+            // Stop existing music AND any running fade animations
             if (backgroundPlayer != null) {
                 backgroundPlayer.stop();
             }
@@ -45,7 +45,7 @@ public class SoundManager {
                 fadeTimeline.stop();
             }
             
-            // 2. Check File Existence
+            // Check File Existence
             URL resource = SoundManager.class.getResource("sounds/" + fileName);
             if (resource == null) {
                 System.out.println("⚠️ Warning: Music file not found: " + fileName);
@@ -57,7 +57,7 @@ public class SoundManager {
             backgroundPlayer = new MediaPlayer(media);
             backgroundPlayer.setCycleCount(MediaPlayer.INDEFINITE); 
 
-            // 3. Determine the Target Volume (Goal)
+            // Determine the Target Volume (Goal)
             double targetVolume = 0.5; // Default (Normal)
 
             if (fileName.equalsIgnoreCase("cutscenebgm.wav")) {
@@ -70,9 +70,9 @@ public class SoundManager {
                 targetVolume = 0.3; // Goal is 30%
             }
 
-            // 4. Play with Fade-In OR Normal Start
+            // Play with Fade-In OR Normal Start
             if (fileName.equalsIgnoreCase("cutscenebgm.wav")) {
-                // --- FADE IN LOGIC ---
+                // FADE IN LOGIC
                 backgroundPlayer.setVolume(0); // Start silent
                 backgroundPlayer.play();
 
@@ -83,7 +83,7 @@ public class SoundManager {
                 );
                 fadeTimeline.play();
             } else {
-                // --- NORMAL LOGIC ---
+                // NORMAL LOGIC
                 backgroundPlayer.setVolume(targetVolume);
                 backgroundPlayer.play();
             }

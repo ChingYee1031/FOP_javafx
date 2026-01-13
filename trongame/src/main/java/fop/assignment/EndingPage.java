@@ -25,9 +25,7 @@ public class EndingPage {
     // --- STATES ---
     private boolean isCutsceneActive = false; // State 1
     private boolean isCongratsActive = false; // State 2
-    private boolean isCreditsActive = false;  // State 3 (New)
-
-    // Helper to control the timer (so we can stop it if user skips)
+    private boolean isCreditsActive = false;  // State 3 
     private PauseTransition activeTimer;
 
     @FXML
@@ -49,7 +47,7 @@ public class EndingPage {
                      "SYSTEM LIBERATED.\nTHE CREATOR RETURNS.");
     }
 
-    // --- STAGE 1: STORY CUTSCENE ---
+    //STAGE 1: STORY CUTSCENE 
     private void showCutscene(String imageName, String storyText) {
         try {
             File file = new File(imageName);
@@ -72,20 +70,17 @@ public class EndingPage {
         }
     }
 
-    // --- STAGE 2: CONGRATULATIONS ---
+    // STAGE 2: CONGRATULATIONS 
     private void showCongratulations() {
         try {
-            // 1. Change Background
             File file = new File("images/tron_background.png");
             if (file.exists()) {
                 backgroundImageView.setImage(new Image(file.toURI().toString()));
             }
+            if (PressSpace != null) PressSpace.setVisible(true);
 
-            // 2. Hide "Press Space" initially (optional, or keep it if you want them to skip)
-            if (PressSpace != null) PressSpace.setVisible(false);
-
-            // 3. Update Text with USERNAME
-            String playerName = "USER"; // Default fallback
+            // Update Text with USERNAME
+            String playerName = "USER";
             if (App.globalPlayer != null) {
                 playerName = App.globalPlayer.getName().toUpperCase(); // e.g. "JOHNDOE"
             }
@@ -96,13 +91,12 @@ public class EndingPage {
             storyLabel.setPrefHeight(300); 
             StackPane.setAlignment(storyLabel, Pos.CENTER); 
 
-            // 4. Update State
             isCutsceneActive = false;
             isCongratsActive = true;
 
-            // 5. Start 10s Timer -> Then go to CREDITS (not menu yet)
+            // Start 10s Timer
             activeTimer = new PauseTransition(Duration.seconds(10));
-            activeTimer.setOnFinished(event -> showCredits()); // Chain to Credits
+            activeTimer.setOnFinished(event -> showCredits()); 
             activeTimer.play();
 
         } catch (Exception e) {
@@ -110,52 +104,45 @@ public class EndingPage {
         }
     }
 
-    // --- STAGE 3: CREDITS ---
+    //STAGE 3: CREDITS
     private void showCredits() {
         // Stop the timer if we skipped manually
         if (activeTimer != null) activeTimer.stop();
 
-        // 1. Format the names into aligned columns
-        // %-16s means "take up 16 characters space, aligned to the left"
-        // This ensures every line has the exact same width structure.
         String row1 = String.format("%-16s   %s", "GOH CHING YEE", "ONG JING ZHI");
         String row2 = String.format("%-16s   %s", "KU LEE HANN",   "YOW JIA YEN");
         String row3 = String.format("%-16s   %s", "YONG ZI YAN",   "VICTORIA KEW");
 
-        // 2. Set the text
+        // Set the text
         storyLabel.setText("CREDITS\n\n" +
                            row1 + "\n" +
                            row2 + "\n" +
                            row3 + "\n\n" +
                            "THANKS FOR PLAYING");
         
-        // 3. Optional: Force a strict Monospace font for perfect alignment
-        // You can remove this line if you prefer to keep the OCR font
         storyLabel.setStyle("-fx-font-family: 'Consolas'; -fx-font-size: 28px; -fx-text-fill: white; -fx-background-color: rgba(0,0,0,0.5); -fx-background-radius: 10;");
 
-        // 4. Show "Press Space" instructions
+        // Show "Press Space" instructions
         if (PressSpace != null) {
             PressSpace.setVisible(true);
             PressSpace.setText("[ PRESS SPACE TO RETURN TO MENU ]");
         }
 
-        // 5. Update State
+        // Update State
         isCongratsActive = false;
         isCreditsActive = true;
     }
 
-    // inside EndingPage.java
-
     private void returnToMenu() {
         try {
-            // 1. Just Save (Do NOT reset to 0)
+            //  Just Save (Do NOT reset to 0)
             if (App.globalPlayer != null && App.globalPassword != null) {
-                // The player is currently Lvl 99, XP 10000. 
-                // We save this state so the Leaderboard sees the high score.
+                // player  currently Lvl 99, XP 10000
+                // save this state so Leaderboard sees highest score
                 DataManager.savePlayer(App.globalPlayer, App.globalPassword);
             }
 
-            // 2. Stop Music and Switch
+            // Stop Music and Switch
             SoundManager.stopMusic();
             App.setRoot("MenuPage");
 
@@ -172,7 +159,7 @@ public class EndingPage {
             } else if (isCongratsActive) {
                 showCredits();
             } else if (isCreditsActive) {
-                returnToMenu(); // <--- Call the save/reset logic here
+                returnToMenu(); 
             }
         }
     }

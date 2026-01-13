@@ -16,7 +16,6 @@ public class PlayerScore {
         this.date = new SimpleStringProperty(date);
     }
 
-    // JavaFX TableView needs these specific "Property" getters to update automatically
     public String getName() { return name.get(); }
     public int getLevel() { return level.get(); }
     public int getScore() { return score.get(); }

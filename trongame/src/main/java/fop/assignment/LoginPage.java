@@ -1,7 +1,6 @@
 package fop.assignment;
 
 import java.io.IOException;
-
 import javafx.fxml.FXML;
 import javafx.scene.control.Label;
 import javafx.scene.control.PasswordField;
@@ -28,7 +27,7 @@ public class LoginPage {
             return;
         }
 
-        // 1. Attempt Login
+        // Attempt Login
         Player loadedPlayer = DataManager.login(username, password);
 
         if (loadedPlayer != null) {
@@ -43,7 +42,7 @@ public class LoginPage {
             System.out.println("New User Identity Created.");
         }
 
-        // 2. ALWAYS go to MenuPage (Tutorial check is moved to CharacterSelection)
+        // ALWAYS go to MenuPage 
         App.setRoot("MenuPage");
     }
 }

@@ -13,26 +13,25 @@ public class ArenaModel {
     private boolean isOpenType = false; 
     private boolean speedBoostActive = false;
 
-    // 45 Seconds in Nanoseconds
     // for speed ramp respawn
     private final long RAMP_RESPAWN_TIME = 45_000_000_000L;
 
     public ArenaModel() {
-        // Default constructor
+        
     }
 
-    // LEVEL 1-9: THE GRID (Basic Empty Box)
+    // LEVEL 1-9: THE GRID 
     public void loadArena1() {
         reset(false); 
         addOuterBoundaries(); 
     }
 
-    // LEVEL 10-19: ACCELERATION (Speed Ramps)
+    // LEVEL 10-19: ACCELERATION
     public void loadArena2() {
         reset(false); 
         addOuterBoundaries();
         
-        // Add "Highways" of speed ramps
+        // Add speed ramps
         for(int i=5; i<35; i++) {
             grid[i][10] = 3; 
             grid[i][30] = 3; 
@@ -41,23 +40,17 @@ public class ArenaModel {
             grid[20][j] = 3; 
         }
     }
-
-    // --- CHANGED: EASIER VERSION ---
-    // LEVEL 20-29: THE BUNKER (Sparse Obstacles)
+    // LEVEL 20-29: THE BUNKER 
     public void loadArena3() {
         reset(false); 
         addOuterBoundaries();
-        
-        // Old version was too tight. 
-        // New version: 4 Long walls for cover, but wide open center.
-        
         // Vertical Walls
         for (int y = 10; y < 30; y++) {
             grid[10][y] = 1;
             grid[30][y] = 1;
         }
         
-        // Horizontal Walls (with gap in middle)
+        // Horizontal Walls 
         for (int x = 12; x < 29; x++) {
             if (x < 18 || x > 22) { // Leave a gap in the very center
                 grid[x][10] = 1;
@@ -66,8 +59,7 @@ public class ArenaModel {
         }
     }
 
-    // --- CHANGED: SCALING DIFFICULTY ---
-    // LEVEL 30+: THE GLITCH (Randomized & Scaling)
+    // LEVEL 30+: THE GLITCH 
     public void loadRandomArena(int currentLevel) {
         reset(true); // Open Type (Falling is possible)
         
@@ -82,7 +74,6 @@ public class ArenaModel {
         
         int obstacleCount = 30 + difficultyScaling;
         
-        // Cap the max obstacles so map is not impossible (Max 400 cells are walls)
         if (obstacleCount > 400) obstacleCount = 400;
 
         for (int i = 0; i < obstacleCount; i++) {
@@ -98,7 +89,7 @@ public class ArenaModel {
         }
     }
 
-    // --- CORE LOGIC ---
+    // CORE LOGIC
 
     private void reset(boolean open) {
         grid = new int[GRID_SIZE][GRID_SIZE];
@@ -130,7 +121,6 @@ public class ArenaModel {
     public void processMove(GameCharacter c, int nextX, int nextY) {
         // Check Falling Off (Arena 4 only)
         if (nextX < 0 || nextX >= GRID_SIZE || nextY < 0 || nextY >= GRID_SIZE) {
-            // Logic handled in Controller, but model knows it's invalid
             return; 
         }
 
@@ -160,13 +150,10 @@ public class ArenaModel {
 
         while (it.hasNext()) {
             RampTask task = it.next();
-            
             // If 45 seconds have passed...
             if (now - task.timeUsed >= RAMP_RESPAWN_TIME) {
                 
                 // RESTORE THE RAMP
-                // Only restore if it's not currently a Wall (1) 
-                // We overwrite Trails (2 or 4) or Empty (0) back to Ramp (3)
                 if (grid[task.x][task.y] != 1) {
                     grid[task.x][task.y] = 3;
                 }

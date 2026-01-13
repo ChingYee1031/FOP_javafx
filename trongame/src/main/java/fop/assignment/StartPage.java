@@ -13,7 +13,7 @@ public class StartPage {
     void handleStartButton() throws IOException {
         App.setRoot("LoginPage");
 
-        // For demonstration purposes, print a message to the console
+        //print a message to the console
         System.out.println("Start Button Clicked");
     }
 }

@@ -5,22 +5,22 @@ import java.util.Scanner;
 
 public abstract class GameCharacter {
     
-    // --- BASIC ATTRIBUTES (From old Character.java) ---
+    //  BASIC ATTRIBUTES
     protected String name;
     protected String color;
     protected double lives;
     protected double speed;
     
-    // --- POSITIONING (From old GameCharacter.java) ---
+    // POSITIONING 
     protected int x, y;
     
-    // --- DISC/COMBAT MECHANICS (From old GameCharacter.java) ---
+    // DISC/COMBAT MECHANICS 
     protected int maxDiscSlots = 1; 
     protected int currentDiscSlots = 1;
     protected long lastThrowTime = 0;
-    protected static final long COOLDOWN_MS = 5000; // 5 Seconds
+    protected static final long COOLDOWN_MS = 5000; 
 
-    // --- CONSTRUCTOR ---
+    // CONSTRUCTOR
     public GameCharacter(String name, String color, double lives, double speed) {
         this.name = name;
         this.color = color;
@@ -30,19 +30,13 @@ public abstract class GameCharacter {
         // Default Disc Setup
         this.maxDiscSlots = 1;
         this.currentDiscSlots = 1;
-        
-        // OPTIONAL: Immediately try to load better stats from file if they exist
+    
         loadAttributesFromFile(name);
     }
 
-    // --- DATA LOADING (Moved from Character.java) ---
-    /**
-     * Looks for the character in characters.txt and overrides stats if found.
-     */
+    // --- DATA LOADING 
     public void loadAttributesFromFile(String targetName) {
         File file = new File("characters.txt");
-        
-        // If file doesn't exist, just keep the default values passed in constructor
         if (!file.exists()) return; 
 
         try (Scanner reader = new Scanner(file)) {
@@ -50,12 +44,12 @@ public abstract class GameCharacter {
                 String line = reader.nextLine();
                 String[] data = line.split(",");
 
-                // Expected format: Name, ColorName, Handling, SpeedDesc, Lives
+                // Name, ColorName, Handling, SpeedDesc, Lives
                 if (data.length > 4 && data[0].equalsIgnoreCase(targetName)) {
-                    // 1. Update Name
+                    //Update Name
                     this.name = data[0];
                     
-                    // 2. Map Color Names to Hex
+                    // Map Color Names to Hex
                     if (data[1].equalsIgnoreCase("Blue")) this.color = "#0000FF";
                     else if (data[1].equalsIgnoreCase("White")) this.color = "#FFFFFF";
                     else if (data[1].equalsIgnoreCase("Cyan")) this.color = "#00FFFF";
@@ -63,11 +57,11 @@ public abstract class GameCharacter {
                     else if (data[1].equalsIgnoreCase("Yellow")) this.color = "#FFFF00";
                     else if (data[1].equalsIgnoreCase("Green")) this.color = "#00FF00";
 
-                    // 3. Map Speed
-                    // If text contains "High", set 2.5, else 1.5 (or keep current)
+                    // Map Speed
+                    // text contains "High", set 2.5, else 1.5 
                     this.speed = data[2].contains("High") ? 2.5 : 1.5;
                     
-                    // 4. Map Lives
+                    // Map Lives
                     this.lives = Double.parseDouble(data[4]);
                     
                     // Debug print to confirm loading happened
@@ -80,7 +74,7 @@ public abstract class GameCharacter {
         }
     }
 
-    // --- MOVEMENT ---
+    // MOVEMENT
     public void setPosition(int x, int y) {
         this.x = x;
         this.y = y;
@@ -89,7 +83,7 @@ public abstract class GameCharacter {
     public int getX() { return x; }
     public int getY() { return y; }
 
-    // --- COMBAT & STATS ---
+    // COMBAT & STATS
     public void reduceLives(double amount) {
         this.lives -= amount;
         if (this.lives < 0) this.lives = 0;
@@ -99,7 +93,7 @@ public abstract class GameCharacter {
         return lives > 0;
     }
 
-    // --- DISC MECHANICS ---
+    // DISC MECHANICS
     public boolean hasDisc() { 
         return currentDiscSlots > 0;
     }
@@ -134,7 +128,7 @@ public abstract class GameCharacter {
         return (diff < 0) ? 0 : diff;
     }
 
-    // --- GETTERS ---
+    // GETTERS
     public int getCurrentDiscSlots() { return currentDiscSlots; }
     public int getMaxDiscSlots() { return maxDiscSlots; }
     
@@ -143,7 +137,7 @@ public abstract class GameCharacter {
     public double getLives() { return lives; }
     public double getSpeed() { return speed; }
     
-    // Setters needed for upgrades (e.g., Level Up in Player class)
+    // Setters
     public void setLives(double lives) { this.lives = lives; }
     public void setSpeed(double speed) { this.speed = speed; }
     public void setColor(String color) { this.color = color; }

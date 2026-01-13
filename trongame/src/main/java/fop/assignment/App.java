@@ -1,7 +1,6 @@
 package fop.assignment;
 
 import java.io.IOException;
-
 import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.fxml.FXMLLoader;
@@ -13,7 +12,7 @@ public class App extends Application {
 
     private static Scene scene;
     
-    // --- GLOBAL STATE (Saves progress between screens) ---
+    // GLOBAL STATE (Saves progress between screens)
     public static Player globalPlayer; 
     public static CharacterSelection globalSelectedCharacter;
     public static String globalPassword;
@@ -23,17 +22,14 @@ public class App extends Application {
 
     @Override
     public void start(Stage stage) throws IOException {
-        // Start at the Character Selection or Start Page
-        scene = new Scene(loadFXML("StartPage"), 1280, 720); // 800x600 for better view
+        scene = new Scene(loadFXML("StartPage"), 1280, 720); 
         stage.setScene(scene);
         stage.show();
-
-        // --- NEW: AUTO-SAVE ON EXIT ---
-        // This listens for the "Red X" close button click
+        // listens for the "Red X" close button click
         stage.setOnCloseRequest(event -> {
             System.out.println("Window closing... Checking for unsaved progress.");
             
-            // Only save if a player is actually logged in
+            // Only save if player is logged in
             if (globalPlayer != null && globalPassword != null) {
                 DataManager.savePlayer(globalPlayer, globalPassword);
                 System.out.println("Progress Auto-Saved on Exit!");
@@ -47,16 +43,15 @@ public class App extends Application {
     public static void setRoot(String fxml) throws IOException {
         scene.setRoot(loadFXML(fxml));
         
-        // --- AUTO-RESIZE WINDOW ---
-        // Ensures the window resizes to fit larger screens (like the Arena)
+        // Ensures window resizes to fit larger screens 
         if (scene.getWindow() != null) {
             Stage stage = (Stage) scene.getWindow();
             stage.sizeToScene(); 
-            stage.centerOnScreen(); // Keeps the window centered on your monitor
+            stage.centerOnScreen(); // Keeps the window center
         }
     }
 
-    // Helper to switch to a specific cutscene
+    // switch to a specific cutscene
     public static void goToCutscene(String chapterId) throws IOException {
         currentChapterId = chapterId;
         setRoot("CutscenePage");

@@ -6,7 +6,6 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Scanner;
-
 import javafx.fxml.FXML;
 import javafx.scene.Scene;
 import javafx.scene.control.Label;
@@ -30,7 +29,7 @@ public class CutscenePage {
         this.currentChapter = App.currentChapterId; 
         this.currentSceneNumber = 1; 
 
-        // Set the Chapter Title
+        // Set Chapter Title
         if (storyData.containsKey(currentChapter)) {
             titleLabel.setText(storyData.get(currentChapter));
         } else {
@@ -57,21 +56,16 @@ public class CutscenePage {
     private void loadCurrentScene() {
         String sceneId = currentChapter + ".scene" + currentSceneNumber;
 
-        // 1. Check if we have text for this scene
         if (storyData.containsKey(sceneId)) {
             storyLabel.setText(storyData.get(sceneId));
-
-            // 2. Load the image from Project Folder (Standard File logic)
             String imagePath = "images/" + sceneId + ".png"; 
             
             try {
                 File file = new File(imagePath);
                 
-                // Debugging print
                 System.out.println("Loading Cutscene Image: " + file.getAbsolutePath());
 
                 if (file.exists()) {
-                    // Load using file URI (Fixes path issues)
                     cutsceneImage.setImage(new Image(file.toURI().toString()));
                 } else {
                     System.out.println("ERROR: Image file missing at: " + imagePath);
@@ -82,7 +76,6 @@ public class CutscenePage {
                 e.printStackTrace();
             }
         } else {
-            // No more scenes? Decide where to go next.
             enterGame();
         }
     }
@@ -95,7 +88,6 @@ public class CutscenePage {
 
     private void enterGame() {
         try {
-            // Chapter 10 sends player back to Arena to fight the final battle
             System.out.println("End of Cutscene. Entering Game Arena...");
             App.setRoot("Arena");
             

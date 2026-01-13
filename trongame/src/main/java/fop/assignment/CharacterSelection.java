@@ -57,14 +57,11 @@ public class CharacterSelection {
     }
 
     private void startGame() throws IOException {
-        // 1. Tutorial Check
         if (App.globalPlayer != null && !App.globalPlayer.hasSeenTutorial()) {
             System.out.println("First time player -> Going to Tutorial Page");
             App.setRoot("TutorialPage");
             return; 
         }
-
-        // 2. Story vs Arena Check (Level 1 goes to Story)
         if (App.globalPlayer.getLevel() == 1) {
             System.out.println("New Game detected. Playing Intro Cutscene...");
             App.goToCutscene("chapter1"); 

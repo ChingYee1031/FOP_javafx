@@ -12,9 +12,7 @@ import java.util.List;
 public class DataManager {
 
     private static final String FILE_PATH = "users.csv";
-
-    // --- 1. SAVE PROGRESS (Updates existing user or creates new one) ---
-    // --- 1. SAVE PROGRESS ---
+    // SAVE PROGRESS
     public static void savePlayer(Player player, String password) {
         List<String> lines = new ArrayList<>();
         boolean userFound = false;
@@ -22,7 +20,6 @@ public class DataManager {
         // Calculate Score Logic
         int currentScore = calculateScore(player);
         
-
         try (BufferedReader br = new BufferedReader(new FileReader(FILE_PATH))) {
             String line;
             while ((line = br.readLine()) != null) {
@@ -33,24 +30,12 @@ public class DataManager {
                 // If username matches, update their data
                 if (parts.length > 0 && parts[0].equals(player.getName())) {
                     
-                    // --- OPTIONAL: KEEP HIGH SCORE ---
-                    // If you want the leaderboard to always show their BEST run ever, 
-                    // un-comment the logic below. Otherwise, it shows the current run's score.
-                    /*
-                    try {
-                        int oldScore = Integer.parseInt(parts[4]);
-                        if (oldScore > currentScore && player.getLevel() != 0) {
-                             currentScore = oldScore;
-                        }
-                    } catch (Exception e) {}
-                    */
-
                     String updatedLine = String.format("%s,%s,%d,%d,%d,%s,%b",
                             player.getName(),
                             password, 
                             player.getLevel(),
                             player.getXP(),
-                            currentScore, // <--- USE THE FIXED VARIABLE HERE
+                            currentScore, 
                             LocalDate.now().toString(),
                             player.hasSeenTutorial()
                     );
@@ -66,19 +51,18 @@ public class DataManager {
         if (!userFound) {
             String newLine = String.format("%s,%s,%d,%d,%d,%s,%b",
                     player.getName(), password, player.getLevel(), player.getXP(), 
-                    currentScore, // <--- USE FIXED VARIABLE
+                    currentScore, // 
                     LocalDate.now().toString(),
                     player.hasSeenTutorial());
             lines.add(newLine);
         }
 
-        // Write to file
         try (PrintWriter pw = new PrintWriter(new FileWriter(FILE_PATH))) {
             for (String l : lines) pw.println(l);
         } catch (IOException e) { e.printStackTrace(); }
     }
 
-    // --- 2. LOGIN (LOAD PLAYER) ---
+    // LOGIN (LOAD PLAYER)
     public static Player login(String username, String password) {
         try (BufferedReader br = new BufferedReader(new FileReader(FILE_PATH))) {
             String line;
@@ -94,7 +78,7 @@ public class DataManager {
                         int level = Integer.parseInt(parts[2]);
                         int xp = Integer.parseInt(parts[3]);
                         
-                        // Check for Tutorial Flag (Index 6)
+                        // Check for Tutorial
                         boolean seenTut = false;
                         if (parts.length >= 7) {
                             seenTut = Boolean.parseBoolean(parts[6]);
@@ -103,7 +87,7 @@ public class DataManager {
                         Player p = new Player(username, "#00FFFF", 3.0, 1.5);
                         p.setLevel(level); 
                         p.setXP(xp);
-                        p.setSeenTutorial(seenTut); // Load the flag
+                        p.setSeenTutorial(seenTut); 
                         
                         return p;
                     } catch (NumberFormatException e) {
@@ -117,7 +101,7 @@ public class DataManager {
         return null; // Login failed
     }
 
-    // --- 3. LEADERBOARD (Top 10) ---
+    //LEADERBOARD 
     public static List<PlayerScore> getTopPlayers() {
         List<PlayerScore> scores = new ArrayList<>();
         
